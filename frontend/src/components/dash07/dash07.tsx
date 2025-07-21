@@ -9,9 +9,28 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 
-import data from "./data.json"
+
+import { useEffect, useState } from "react"
+import api from "@/../services/api"
 
 export default function Dash07() {
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    setLoading(true)
+    api.get("/documents_with_metadata")
+      .then(res => {
+        setData(res.data)
+        setError("")
+      })
+      .catch(err => {
+        setError("Failed to load data")
+      })
+      .finally(() => setLoading(false))
+  }, [])
+
   return (
     <SidebarProvider
       style={
@@ -31,7 +50,13 @@ export default function Dash07() {
               <div className="px-4 lg:px-6">
                 <ChartAreaInteractive />
               </div>
-              <DataTable data={data} />
+              {loading ? (
+                <div className="p-8 text-center">Loading...</div>
+              ) : error ? (
+                <div className="p-8 text-center text-red-500">{error}</div>
+              ) : (
+                <DataTable data={data} />
+              )}
             </div>
           </div>
         </div>

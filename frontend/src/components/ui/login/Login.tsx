@@ -1,5 +1,3 @@
-
-
 import mission from '../../../assets/mission.png'
 import logosif from '../../../assets/logosif.svg'
 
@@ -59,7 +57,7 @@ function Login() {
     </Card>
     </div>
      <div className="w-[230px] h-[230px]" >
-      <img src={mission} className='rounded-3xl object-cover w-full h-full '/>
+      <img src={mission} className='rounded-3xl object-cover w-full h-full ' alt='Mission'/>
      </div>
   </div>
   </div>

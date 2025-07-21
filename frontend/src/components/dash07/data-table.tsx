@@ -1,4 +1,6 @@
 import * as React from "react"
+import jsPDF from "jspdf"
+import "jspdf-autotable"
 import {
   closestCenter,
   DndContext,
@@ -334,23 +336,44 @@ function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
   )
 }
 
-export function DataTable({
-  data: initialData,
-}: {
-  data: z.infer<typeof schema>[]
-}) {
-  const [data, setData] = React.useState(() => initialData)
-  const [rowSelection, setRowSelection] = React.useState({})
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({})
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+
+  // Accepts backend data, adapts to expected table shape
+  const [search, setSearch] = React.useState("")
+  const [data, setData] = React.useState(() =>
+    Array.isArray(initialData)
+      ? initialData.map((d, i) => ({
+          id: d.id || i + 1,
+          header: d.header || d.title || d.name || "",
+          type: d.type || d.section_type || "",
+          status: d.status || d.state || "",
+          target: d.target || "",
+          limit: d.limit || "",
+          reviewer: d.reviewer || (d.metadata && d.metadata[0]?.value) || "Assign reviewer",
+        })
+      )
+      : []
   )
+  React.useEffect(() => {
+    setData(
+      Array.isArray(initialData)
+        ? initialData.map((d, i) => ({
+            id: d.id || i + 1,
+            header: d.header || d.title || d.name || "",
+            type: d.type || d.section_type || "",
+            status: d.status || d.state || "",
+            target: d.target || "",
+            limit: d.limit || "",
+            reviewer: d.reviewer || (d.metadata && d.metadata[0]?.value) || "Assign reviewer",
+          }))
+        : []
+    )
+  }, [initialData])
+
+  const [rowSelection, setRowSelection] = React.useState({})
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [sorting, setSorting] = React.useState<SortingState>([])
-  const [pagination, setPagination] = React.useState({
-    pageIndex: 0,
-    pageSize: 10,
-  })
+  const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
   const sortableId = React.useId()
   const sensors = useSensors(
     useSensor(MouseSensor, {}),
@@ -358,13 +381,24 @@ export function DataTable({
     useSensor(KeyboardSensor, {})
   )
 
+  const filteredData = React.useMemo(() => {
+    if (!search) return data
+    return data.filter(
+      (row) =>
+        row.header?.toLowerCase().includes(search.toLowerCase()) ||
+        row.type?.toLowerCase().includes(search.toLowerCase()) ||
+        row.status?.toLowerCase().includes(search.toLowerCase()) ||
+        row.reviewer?.toLowerCase().includes(search.toLowerCase())
+    )
+  }, [data, search])
+
   const dataIds = React.useMemo<UniqueIdentifier[]>(
-    () => data?.map(({ id }) => id) || [],
-    [data]
+    () => filteredData?.map(({ id }) => id) || [],
+    [filteredData]
   )
 
   const table = useReactTable({
-    data,
+    data: filteredData,
     columns,
     state: {
       sorting,
@@ -399,40 +433,39 @@ export function DataTable({
     }
   }
 
+  function handleExportPDF() {
+    const doc = new jsPDF()
+    const tableColumn = ["Header", "Type", "Status", "Target", "Limit", "Reviewer"]
+    const tableRows = filteredData.map((row) => [
+      row.header,
+      row.type,
+      row.status,
+      row.target,
+      row.limit,
+      row.reviewer,
+    ])
+    doc.autoTable({ head: [tableColumn], body: tableRows })
+    doc.save("table-data.pdf")
+  }
+
   return (
     <Tabs
       defaultValue="outline"
       className="w-full flex-col justify-start gap-6"
     >
-      <div className="flex items-center justify-between px-4 lg:px-6">
-        <Label htmlFor="view-selector" className="sr-only">
-          View
-        </Label>
-        <Select defaultValue="outline">
-          <SelectTrigger
-            className="flex w-fit @4xl/main:hidden"
-            size="sm"
-            id="view-selector"
-          >
-            <SelectValue placeholder="Select a view" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="outline">Outline</SelectItem>
-            <SelectItem value="past-performance">Past Performance</SelectItem>
-            <SelectItem value="key-personnel">Key Personnel</SelectItem>
-            <SelectItem value="focus-documents">Focus Documents</SelectItem>
-          </SelectContent>
-        </Select>
-        <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
-          <TabsTrigger value="outline">Outline</TabsTrigger>
-          <TabsTrigger value="past-performance">
-            Past Performance <Badge variant="secondary">3</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="key-personnel">
-            Key Personnel <Badge variant="secondary">2</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="focus-documents">Focus Documents</TabsTrigger>
-        </TabsList>
+      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between px-4 lg:px-6">
+        <div className="flex items-center gap-2 mb-2 md:mb-0">
+          <Input
+            type="text"
+            placeholder="Search..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-48"
+          />
+          <Button variant="outline" size="sm" onClick={handleExportPDF}>
+            Export PDF
+          </Button>
+        </div>
         <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

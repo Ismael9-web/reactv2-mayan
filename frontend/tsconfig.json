@@ -8,6 +8,14 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "jsx": "react-jsx",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "noImplicitAny": true,
+    "module": "esnext",
+    "target": "esnext",
+    "forceConsistentCasingInFileNames": true,
+    "strict": true
   }
 }

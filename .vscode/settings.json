@@ -1,0 +1,17 @@
+{
+  "chat.experimental.agent": "authoring",
+
+  "copilot.mcpServers": {
+    "shadcn-ui": {
+      "command": "npx",
+      "args": [
+        "@jpisnice/shadcn-ui-mcp-server",
+        "--github-api-key",
+        "uQZawXOYb/eDCo72xXnxphK67SjAPSj/78GsIZCzBCQ"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "uQZawXOYb/eDCo72xXnxphK67SjAPSj/78GsIZCzBCQ"
+      }
+    }
+  }
+}
