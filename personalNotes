@@ -1,0 +1,2 @@
+to start the server backend use npx ts-node server.ts
+to start the frontend use pnpm dev

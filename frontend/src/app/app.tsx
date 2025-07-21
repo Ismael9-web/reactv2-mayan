@@ -1,6 +1,5 @@
-import Login from "@/components/ui/login/Login"
 import LoginPage from "@/components/ui/login/Loginpage"
-// import Dash07 from "@/components/dash07/dash07"  
+import Dash07 from "@/components/dash07/dash07"  
 import { Route, Routes } from "react-router-dom"
 
 function App() {
@@ -16,8 +15,8 @@ function App() {
       <Routes>
         <Route path='/' element={<LoginPage/>} />
        <Route path='login' element={<LoginPage/>} />
-        <Route path='login2' element={<Login/>}/>
-        {/* <Route path='dash07' element={<Dash07/>} /> */}
+        {/* <Route path='login2' element={<Login/>}/> */}
+        <Route path='dash07' element={<Dash07/>} />
         <Route path='*' element={<div>Page not found</div>} />
     
        </Routes>
