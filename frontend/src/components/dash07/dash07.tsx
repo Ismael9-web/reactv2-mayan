@@ -1,6 +1,6 @@
 import { AppSidebar } from "@/components/dash07/app-sidebar"
 import { ChartAreaInteractive } from "@/components/dash07/chart-area-interactive"
-import { DataTable } from "@/components/dash07/data-table"
+// import { DataTable } from "@/components/dash07/data-table"
 // import { SectionCards } from "@/components/dash07/section-cards"
 import { SiteHeader } from "@/components/dash07/site-header"
 
@@ -11,7 +11,7 @@ import {
 
 
 import { useEffect, useState } from "react"
-import api from "@/../services/api"
+import api from "@/../services/api.tsx";
 
 export default function Dash07() {
   const [data, setData] = useState([])
