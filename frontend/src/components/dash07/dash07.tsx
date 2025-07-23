@@ -1,6 +1,6 @@
 import { AppSidebar } from "@/components/dash07/app-sidebar"
 import { ChartAreaInteractive } from "@/components/dash07/chart-area-interactive"
-// import { DataTable } from "@/components/dash07/data-table"
+import { DataTable } from "@/components/dash07/data-table"
 // import { SectionCards } from "@/components/dash07/section-cards"
 import { SiteHeader } from "@/components/dash07/site-header"
 
@@ -25,7 +25,7 @@ export default function Dash07() {
         setData(res.data)
         setError("")
       })
-      .catch(err => {
+      .catch(() => {
         setError("Failed to load data")
       })
       .finally(() => setLoading(false))

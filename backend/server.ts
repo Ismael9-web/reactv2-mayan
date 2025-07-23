@@ -1,3 +1,4 @@
+//give me the script to start this node server
 import dotenv from 'dotenv';
 dotenv.config();
 import express from 'express';

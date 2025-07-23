@@ -1,3 +1,4 @@
+
 import {
   IconCreditCard,
   IconDotsVertical,
@@ -27,16 +28,18 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 
-export function NavUser({
-  user,
-}: {
+export type NavUserProps = {
   user: {
-    name: string
-    email: string
-    avatar: string
-  }
-}) {
-  const { isMobile } = useSidebar()
+    name: string;
+    email: string;
+    avatar: string;
+  };
+};
+
+export function NavUser({ user }: NavUserProps) {
+  // useSidebar must be called unconditionally at the top
+  const sidebar = useSidebar();
+  const isMobile = sidebar?.isMobile ?? false;
 
   return (
     <SidebarMenu>
@@ -104,5 +107,5 @@ export function NavUser({
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
-  )
+  );
 }
