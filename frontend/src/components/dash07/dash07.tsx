@@ -14,22 +14,26 @@ import { useEffect, useState } from "react"
 import api from "@/../services/api.tsx";
 
 export default function Dash07() {
-  const [data, setData] = useState([])
+  // Removed unused data and setData state
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
+  const [columns, setColumns] = useState<string[]>([]);
+  const [rows, setRows] = useState<Record<string, string>[]>([]);
+
   useEffect(() => {
-    setLoading(true)
-    api.get("/documents_with_metadata")
+    setLoading(true);
+    api.get("/approved_documents_metadata")
       .then(res => {
-        setData(res.data)
-        setError("")
+        setColumns(res.data.columns || []);
+        setRows(res.data.rows || []);
+        setError("");
       })
       .catch(() => {
-        setError("Failed to load data")
+        setError("Failed to load data");
       })
-      .finally(() => setLoading(false))
-  }, [])
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <SidebarProvider
@@ -55,7 +59,7 @@ export default function Dash07() {
               ) : error ? (
                 <div className="p-8 text-center text-red-500">{error}</div>
               ) : (
-                <DataTable data={data} />
+                <DataTable columns={columns} rows={rows} />
               )}
             </div>
           </div>
