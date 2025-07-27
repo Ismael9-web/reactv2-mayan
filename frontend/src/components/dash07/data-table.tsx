@@ -1,5 +1,6 @@
 
 
+
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import { Input } from "@/components/ui/input";
@@ -35,8 +36,8 @@ export function DataTable({ columns, rows }: DataTableProps) {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+    <div className="rounded-lg border bg-background p-4 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
         <Input
           placeholder="Filter by any column..."
           value={filter}
@@ -48,28 +49,45 @@ export function DataTable({ columns, rows }: DataTableProps) {
         </Button>
       </div>
       <div className="overflow-x-auto">
-        {filteredRows.length === 0 ? (
-          <div className="p-4 text-center">No documents found.</div>
-        ) : (
-          <table className="min-w-full border border-gray-200 bg-white">
-            <thead>
+        <table className="min-w-full border-separate border-spacing-y-2">
+          <thead>
+            <tr className="bg-muted">
+              {columns.map(col => (
+                <th
+                  key={col}
+                  className="whitespace-nowrap px-4 py-2 text-left text-xs font-semibold text-muted-foreground border-b"
+                >
+                  {col}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filteredRows.length === 0 ? (
               <tr>
-                {columns.map(col => (
-                  <th key={col} className="border px-4 py-2">{col}</th>
-                ))}
+                <td colSpan={columns.length} className="text-center py-8 text-muted-foreground">
+                  No documents found.
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {filteredRows.map((row, idx) => (
-                <tr key={row.id || idx}>
+            ) : (
+              filteredRows.map((row, idx) => (
+                <tr
+                  key={row.id || idx}
+                  className="bg-card hover:bg-accent transition-colors border rounded-lg shadow-sm"
+                >
                   {columns.map(col => (
-                    <td key={col} className="border px-4 py-2">{row[col]}</td>
+                    <td
+                      key={col}
+                      className="whitespace-nowrap px-4 py-2 text-sm border-b"
+                    >
+                      {row[col]}
+                    </td>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );

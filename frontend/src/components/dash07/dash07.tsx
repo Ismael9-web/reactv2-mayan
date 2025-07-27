@@ -6,7 +6,6 @@ import { SiteHeader } from "@/components/dash07/site-header"
 
 import {
   SidebarInset,
-  SidebarProvider,
 } from "@/components/ui/sidebar"
 
 
@@ -36,7 +35,7 @@ export default function Dash07() {
   }, []);
 
   return (
-    <SidebarProvider
+    <div
       style={
         {
           "--sidebar-width": "calc(var(--spacing) * 72)",
@@ -44,7 +43,13 @@ export default function Dash07() {
         } as React.CSSProperties
       }
     >
-      <AppSidebar variant="inset" />
+      <AppSidebar className="border-r bg-background">
+        <div className="p-4">
+          <h2 className="text-lg font-semibold mb-4">Menu</h2>
+          {/* TODO: Replace with actual menu component */}
+          <div>Sidebar menu goes here</div>
+        </div>
+      </AppSidebar>
       <SidebarInset>
         <SiteHeader />
         <div className="flex flex-1 flex-col">
@@ -65,6 +70,6 @@ export default function Dash07() {
           </div>
         </div>
       </SidebarInset>
-    </SidebarProvider>
+    </div>
   )
 }

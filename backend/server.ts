@@ -1,4 +1,3 @@
-// backend/server.ts
 import dotenv from 'dotenv';
 dotenv.config();
 import express from 'express';
@@ -11,6 +10,33 @@ import * as runtime from './src/api/mayan-edms/runtime';
 
 const app = express();
 const port = 5000;
+
+// Route to provide sidebar menu structure for the frontend
+app.get('/api/sidebar_menu', async (req, res) => {
+    // Example: You can fetch this dynamically from Mayan or your own logic
+    // For now, return a static menu structure
+    res.json([
+        {
+            label: 'Dashboard',
+            path: '/dash07',
+            icon: null // You can add icon names or SVGs if you want
+        },
+        {
+            label: 'Documents',
+            path: '/documents',
+            icon: null,
+            children: [
+                { label: 'Approved', path: '/documents/approved', icon: null },
+                { label: 'Pending', path: '/documents/pending', icon: null }
+            ]
+        },
+        {
+            label: 'Settings',
+            path: '/settings',
+            icon: null
+        }
+    ]);
+});
 
 // Middleware
 app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
