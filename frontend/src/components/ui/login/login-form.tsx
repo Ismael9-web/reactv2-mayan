@@ -1,22 +1,26 @@
-import React from "react"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import axios from 'axios';
 
+type LoginFormProps = {
+  onLoginSuccess?: () => void;
+  className?: string;
+  [key: string]: unknown;
+};
 
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import axios from "axios";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
-export function LoginForm(props: React.HTMLAttributes<HTMLDivElement>) {
-  const { className, ...rest } = props;
+export default function LoginForm(props: LoginFormProps) {
+  const { className, onLoginSuccess, ...rest } = props;
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -32,7 +36,11 @@ export function LoginForm(props: React.HTMLAttributes<HTMLDivElement>) {
         { withCredentials: true }
       );
       if (response.data.token) {
-        navigate("/dashboard");
+        if (onLoginSuccess) {
+          onLoginSuccess();
+        } else {
+          navigate("/dashboard");
+        }
       } else {
         setError("Login failed: No token returned");
       }
