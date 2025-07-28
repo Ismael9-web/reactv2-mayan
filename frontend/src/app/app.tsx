@@ -1,5 +1,5 @@
 import LoginPage from "@/components/ui/login/Loginpage"
-import Dash07 from "@/components/dash07/dash07"  
+import { Dash07 } from "@/components/dash07/dash07"  
 import { Route, Routes } from "react-router-dom"
 
 function App() {
