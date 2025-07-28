@@ -1,6 +1,6 @@
 
-import LoginPage from "@/components/ui/login/Loginpage"
-import ListBeneficiaires from "@/components/ui/list-beneficiaires"
+import LoginPage from "../components/ui/login/Loginpage"
+import ListBeneficiaires from "../components/ui/list-beneficiaires"
 import { Route, Routes, useNavigate } from "react-router-dom"
 
 // App manages login state and redirects to dashboard after login
@@ -16,6 +16,7 @@ function App() {
   return (
     <>
       <Routes>
+        <Route path="/" element={<LoginPage onLoginSuccess={handleLoginSuccess} />} />
         <Route path="login" element={<LoginPage onLoginSuccess={handleLoginSuccess} />} />
         <Route path="list-beneficiaires" element={<ListBeneficiaires />} />
         <Route path="*" element={<div>Page not found</div>} />

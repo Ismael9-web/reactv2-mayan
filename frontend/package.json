@@ -70,6 +70,7 @@
     "onlyBuiltDependencies": [
       "@swc/core",
       "@tailwindcss/oxide",
+      "core-js",
       "esbuild"
     ]
   }
