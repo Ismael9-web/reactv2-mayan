@@ -1,26 +1,23 @@
 
 import LoginPage from "@/components/ui/login/Loginpage"
-import { Dash07 } from "@/components/dash07/dash07"  
+import ListBeneficiaires from "@/components/ui/list-beneficiaires"
 import { Route, Routes, useNavigate } from "react-router-dom"
-import { useState } from "react";
 
 // App manages login state and redirects to dashboard after login
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
 
   // Handler for successful login
   const handleLoginSuccess = () => {
-    setIsLoggedIn(true);
-    navigate("/dash07");
+    navigate("/list-beneficiaires");
   };
 
   return (
     <>
       <Routes>
-        <Route path="/" element={<LoginPage onLoginSuccess={handleLoginSuccess} />} />
         <Route path="login" element={<LoginPage onLoginSuccess={handleLoginSuccess} />} />
-        <Route path="dash07" element={isLoggedIn ? <Dash07 /> : <LoginPage onLoginSuccess={handleLoginSuccess} />} />
+        <Route path="list-beneficiaires" element={<ListBeneficiaires />} />
         <Route path="*" element={<div>Page not found</div>} />
       </Routes>
     </>
