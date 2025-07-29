@@ -1,17 +1,17 @@
-# ✅ Full Docker Compose with Postgres, Adminer (autofill), and MinIO
+# Full Docker Compose with Postgres, Adminer (autofill), and MinIO
 
-```yaml
+
 version: '3.8'
 
 services:
   db:
-    image: postgres
+    image: postgres:17.5
     restart: always
     shm_size: 128mb
     environment:
-      POSTGRES_USER: demo
+      POSTGRES_USER: demodsi
       POSTGRES_PASSWORD: mygeo-tresor
-      POSTGRES_DB: demo
+      POSTGRES_DB: demodsi
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - ~/workspace/dsi-budget/POSTGRES/postgres:/var/lib/postgresql/data
@@ -26,9 +26,9 @@ services:
     environment:
       ADMINER_DEFAULT_SERVER: db
       ADMINER_DESIGN: pepa-linha
-      ADMINER_DEFAULT_USER: demo
+      ADMINER_DEFAULT_USER: demodsi
       ADMINER_DEFAULT_PASSWORD: mygeo-tresor
-      ADMINER_DEFAULT_DB: demo
+      ADMINER_DEFAULT_DB: demodsi
 
   minio:
     container_name: minio
@@ -71,21 +71,9 @@ services:
       /usr/bin/mc config host add --quiet --api s3v4 minio http://minio:9000 minioadmin minioadmin;
       sleep infinity;
       "
-```
 
----
 
-✅ Now you can access:
-
-- **Adminer**: [http://localhost:8080](http://localhost:8080) – prefilled with `demo/mygeo-tresor`
-- **MinIO Console**: [http://localhost:9001](http://localhost:9001)
-  - Login: `minioadmin / minioadmin`
-- **MinIO Client** available in container for scripting
-
----
-
-Let me know if you want to:
-- Auto-create bucket
-- Seed test files
-- Add backend MinIO upload route next
+networks:
+  default:
+    driver: bridge
 
