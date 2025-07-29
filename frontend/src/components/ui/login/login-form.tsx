@@ -7,6 +7,7 @@ type LoginFormProps = {
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Cookies from "js-cookie";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
@@ -36,10 +37,12 @@ export default function LoginForm(props: LoginFormProps) {
         { withCredentials: true }
       );
       if (response.data.token) {
+        // Set username cookie for dashboard display
+        Cookies.set("username", username, { path: "/" });
         if (onLoginSuccess) {
           onLoginSuccess();
         } else {
-          navigate("/dashboard");
+          navigate("/list-beneficiaires");
         }
       } else {
         setError("Login failed: No token returned");
@@ -70,6 +73,7 @@ export default function LoginForm(props: LoginFormProps) {
                 <div className="grid gap-3">
                   <label htmlFor="username">Username</label>
                   <Input
+                    id="username"
                     name="username"
                     autoComplete="username"
                     type="text"
@@ -79,10 +83,9 @@ export default function LoginForm(props: LoginFormProps) {
                   />
                 </div>
                 <div className="grid gap-3">
-                  <div className="flex items-center">
-                    <label htmlFor="password">Password</label>
-                  </div>
+                  <label htmlFor="password">Password</label>
                   <Input
+                    id="password"
                     name="password"
                     autoComplete="current-password"
                     type="password"

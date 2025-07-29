@@ -38,12 +38,12 @@ function Login() {
         <form >
           <div className="grid w-full items-center gap-4">
             <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="name">Email</Label>
-              <Input id="name"  type='text'  placeholder="please enter your email" />
+              <Label htmlFor="login-email">Email</Label>
+              <Input id="login-email" name="login-email" type='text' placeholder="please enter your email" />
             </div>
             <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="framework">password</Label>
-              <Input id="name"  type='password' placeholder="please enter your password"   />
+              <Label htmlFor="login-password">Password</Label>
+              <Input id="login-password" name="login-password" type='password' placeholder="please enter your password" />
             </div>
           </div>
         </form>
