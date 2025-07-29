@@ -47,7 +47,32 @@ function formatMoneyFr(val?: string) {
     .replace(/\u00A0/g, ' ');
 }
 import { exportTableToPDF } from "../ui/export-table-to-pdf";
-import { Trash2 } from "lucide-react";
+import PaymentVoucherForm from "../forms/PaymentVoucherForm";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetClose
+} from "@/components/ui/sheet";
+// Helper to check if a date string (in any supported format) is before today
+function isDateExpired(dateStr?: string | null) {
+  if (!dateStr) return false;
+  let d: Date | null = null;
+  if (/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) {
+    const [day, month, year] = dateStr.split("-");
+    d = new Date(Number(year), Number(month) - 1, Number(day));
+  } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) {
+    const [day, month, year] = dateStr.split("/");
+    d = new Date(Number(year), Number(month) - 1, Number(day));
+  } else {
+    d = new Date(dateStr);
+  }
+  if (!d || isNaN(d.getTime())) return false;
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  return d < today;
+}
 
 interface RowData {
   [key: string]: string;
@@ -55,6 +80,8 @@ interface RowData {
 
 
 export default function ApprovedDocumentsPage() {
+  const [showPaymentSheet, setShowPaymentSheet] = useState(false);
+  const [prefillData, setPrefillData] = useState<Record<string, string> | null>(null);
   const [data, setData] = useState<RowData[]>([]);
   const [labels, setLabels] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -259,13 +286,33 @@ export default function ApprovedDocumentsPage() {
                             );
                           })}
                           <td className="px-4 py-4 text-center">
-                            <button
-                              className="p-2 rounded hover:bg-red-100 text-red-600 hover:text-red-800 transition-colors"
-                              title="Supprimer la ligne"
-                              onClick={() => alert('Suppression de la ligne ' + (row.id || i))}
-                            >
-                              <Trash2 size={18} />
-                            </button>
+                            {(() => {
+                              // Find the DATE-FIN column for this row
+                              let dateFin = null;
+                              for (const key of Object.keys(row)) {
+                                const normalized = key.normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/[-_ ]/g, '').toUpperCase();
+                                if (normalized === "DATEFIN") {
+                                  dateFin = row[key];
+                                  break;
+                                }
+                              }
+                              const expired = isDateExpired(dateFin);
+                              return (
+                                <button
+                                  className={`px-3 py-2 rounded text-white text-sm font-semibold ${expired ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}
+                                  disabled={expired}
+                                  title={expired ? 'Date expirée' : 'Payer'}
+                                  onClick={() => {
+                                    if (!expired) {
+                                      setPrefillData(row);
+                                      setShowPaymentSheet(true);
+                                    }
+                                  }}
+                                >
+                                  Payer
+                                </button>
+                              );
+                            })()}
                           </td>
                         </tr>
                       ))}
@@ -297,6 +344,19 @@ export default function ApprovedDocumentsPage() {
           </Card>
         </div>
       </div>
+      <Sheet open={showPaymentSheet} onOpenChange={setShowPaymentSheet}>
+        <SheetContent side="right">
+          <SheetHeader>
+            <SheetTitle>Effectuer un paiement</SheetTitle>
+            <SheetClose asChild>
+              <button className="text-gray-500 hover:text-gray-800 absolute top-4 right-4">&times;</button>
+            </SheetClose>
+          </SheetHeader>
+          <div className="p-2">
+            <PaymentVoucherForm prefill={prefillData || undefined} />
+          </div>
+        </SheetContent>
+      </Sheet>
       <footer className="w-full text-center py-4 text-gray-700 bg-white/80 mt-8">
         Ministère du Budget &copy; 2025
       </footer>

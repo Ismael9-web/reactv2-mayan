@@ -28,8 +28,21 @@ const voucherSchema = z.object({
 
 
 
-export default function PaymentVoucherForm() {
+interface PaymentVoucherFormProps {
+  prefill?: Record<string, string>;
+}
+
+
+export default function PaymentVoucherForm({ prefill }: PaymentVoucherFormProps) {
   const [loading, setLoading] = useState(false)
+
+  const defaultValues = {
+    payee: prefill?.payee || '',
+    amount: prefill?.amount || '',
+    date: prefill?.date || prefill?.['date-initial'] || prefill?.['DATE-INITIAL'] || '',
+    description: prefill?.description || '',
+    file: undefined,
+  };
 
   const {
     register,
@@ -39,6 +52,7 @@ export default function PaymentVoucherForm() {
     setValue,
   } = useForm({
     resolver: zodResolver(voucherSchema),
+    defaultValues,
   })
 
   const onSubmit = async (data: z.infer<typeof voucherSchema>) => {
@@ -114,6 +128,8 @@ export default function PaymentVoucherForm() {
                 }
               }}
             />
+            {/* Register file field for validation tracking */}
+            <input type="hidden" {...register("file")}/>
             {errors.file && typeof errors.file.message === 'string' && (
               <p className="text-sm text-red-500">{errors.file.message}</p>
             )}
