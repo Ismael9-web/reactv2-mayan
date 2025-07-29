@@ -33,17 +33,18 @@ function formatDateFr(dateStr?: string) {
 }
 function formatMoneyFr(val?: string) {
   if (!val) return "";
-  // Remove spaces, replace comma with dot for parseFloat, then format
-  const num = parseFloat(val.replace(/\s/g, '').replace(',', '.'));
+  // Remove all non-digit, non-comma, non-dot chars, then parse
+  const cleaned = String(val).replace(/[^\d,.]/g, '');
+  const num = parseFloat(cleaned.replace(/\s/g, '').replace(',', '.'));
   if (isNaN(num)) return val;
-  // Use French format: space for thousands, comma for decimals, min 2 decimals
+  // Always output French format: space for thousands, comma for decimals, 2 decimals
   return num
     .toLocaleString('fr-FR', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
       useGrouping: true
     })
-    .replace(/\u00A0/g, ' '); // Replace non-breaking space with normal space
+    .replace(/\u00A0/g, ' ');
 }
 import { exportTableToPDF } from "../ui/export-table-to-pdf";
 import { Trash2 } from "lucide-react";
@@ -160,6 +161,7 @@ export default function ApprovedDocumentsPage() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mt-8 mb-4">
             <div className="flex gap-2 items-center w-full md:w-auto">
               <Input
+                name="search"
                 placeholder="Rechercher..."
                 value={search}
                 onChange={(e) => {
@@ -243,11 +245,12 @@ export default function ApprovedDocumentsPage() {
                           </td>
                           {visibleColumns.map((label) => {
                             let value = row[label];
-                          if (["DATE-FIN", "DATE-INITIAL"].includes(label.toUpperCase())) {
+                          // Normalize label: remove diacritics, dashes, underscores, spaces, uppercase
+                          const normalizedLabel = label.normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/[-_ ]/g, '').toUpperCase();
+                          if (["DATEFIN", "DATEINITIAL"].includes(normalizedLabel)) {
                             value = formatDateFr(value);
-                          } else if (["MONTANT PAR MOIS", "TOTAL-A-PAYER"].includes(label.toUpperCase())) {
+                          } else if (["MONTANTPARMOIS", "TOTALAPAYER"].includes(normalizedLabel)) {
                             value = formatMoneyFr(value);
-                            // Ensure TOTAL-A-PAYER is always formatted, even if value is a number
                           }
                             return (
                               <td key={label} className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">

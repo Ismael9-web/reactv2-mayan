@@ -1,2 +1,95 @@
-to start the server backend use npx ts-node server.ts
-to start the frontend use pnpm dev
+reactv2-mayan/
+├── backend/
+│   ├── fetch_metadata.sh
+│   ├── openapitools.json
+│   ├── package.json
+│   ├── pnpm-lock.yaml
+│   ├── server.js
+│   ├── server.ts
+│   ├── tsconfig.json
+│   └── src/
+│       └── api/
+│           └── mayan-edms/
+│               ├── index.js
+│               ├── index.ts
+│               ├── runtime.js
+│               ├── runtime.ts
+│               ├── apis/
+│               └── models/
+├── frontend/
+│   ├── components.json
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── package.json
+│   ├── pnpm-lock.yaml
+│   ├── README.md
+│   ├── tsconfig.app.json
+│   ├── tsconfig.json
+│   ├── tsconfig.node.json
+│   ├── vite.config.ts
+│   ├── public/
+│   │   ├── budget.jpeg
+│   │   └── vite.svg
+│   ├── services/
+│   │   ├── api.js
+│   │   ├── api.jsx
+│   │   └── api.tsx
+│   └── src/
+│       ├── index.css
+│       ├── main.tsx
+│       ├── vite-env.d.ts
+│       ├── app/
+│       │   ├── app.tsx
+│       │   └── ProtectedRoute.tsx
+│       ├── assets/
+│       │   ├── budget.jpeg
+│       │   ├── budget.svg
+│       │   ├── file.svg
+│       │   ├── logosif.svg
+│       │   ├── mission.png
+│       │   └── react.svg
+│       ├── components/
+│       │   ├── dash07/
+│       │   │   ├── dash07.tsx
+│       │   │   └── data-table.tsx
+│       │   ├── ui/
+│       │   │   ├── approved-documents-page.tsx
+│       │   │   ├── avatar.tsx
+│       │   │   ├── badge.tsx
+│       │   │   ├── breadcrumb.tsx
+│       │   │   ├── build-columns.ts
+│       │   │   ├── button.tsx
+│       │   │   ├── card.tsx
+│       │   │   ├── chart.tsx
+│       │   │   ├── checkbox.tsx
+│       │   │   ├── collapsible.tsx
+│       │   │   ├── data-table.tsx
+│       │   │   ├── drawer.tsx
+│       │   │   ├── dropdown-menu.tsx
+│       │   │   ├── export-table-to-pdf.ts
+│       │   │   ├── input.tsx
+│       │   │   ├── label.tsx
+│       │   │   ├── list-beneficiaires.tsx
+│       │   │   ├── select.tsx
+│       │   │   ├── separator.tsx
+│       │   │   ├── sheet.tsx
+│       │   │   ├── sidebar.tsx
+│       │   │   ├── skeleton.tsx
+│       │   │   ├── sonner.tsx
+│       │   │   ├── table.tsx
+│       │   │   ├── tabs.tsx
+│       │   │   ├── toggle-group.tsx
+│       │   │   ├── toggle.tsx
+│       │   │   ├── tooltip.tsx
+│       │   │   └── login/
+│       │   │       ├── Login.tsx
+│       │   │       ├── Loginpage.tsx
+│       │   │       └── login-form.tsx
+│       ├── hooks/
+│       │   └── use-mobile.ts
+│       └── lib/
+│           └── utils.ts
+├── mayan-extension/
+│   └── docs/
+│       └── mayan-edms-openapi.json
+└── personalNotes
