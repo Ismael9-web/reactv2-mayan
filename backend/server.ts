@@ -7,9 +7,14 @@ import axios from 'axios';
 import cookieParser from 'cookie-parser';
 import { DocumentsApi } from './src/api/mayan-edms/apis/DocumentsApi';
 import * as runtime from './src/api/mayan-edms/runtime';
+import multer from 'multer';
+import { S3Service } from './src/services/s3Service';
+
 
 const app = express();
 const port = 5000;
+
+
 
 // Route to provide sidebar menu structure for the frontend
 app.get('/api/sidebar_menu', async (req, res) => {
@@ -81,6 +86,85 @@ async function getAuthToken() {
         throw new Error('Failed to fetch auth token');
     }
 }
+
+// S3 Configuration
+const s3Config = {
+  endpoint: process.env.MINIO_ENDPOINT || 'http://localhost:9000',
+  accessKeyId: process.env.MINIO_ACCESS_KEY || 'minioadmin',
+  secretAccessKey: process.env.MINIO_SECRET_KEY || 'minioadmin123',
+  region: process.env.MINIO_REGION || 'us-east-1',
+  bucket: process.env.MINIO_BUCKET || 'user-uploads',
+};
+
+const s3Service = new S3Service(s3Config);
+
+// Configure multer for file uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+});
+
+// S3 Routes
+app.post('/api/upload', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file provided' });
+    }
+
+    const key = `uploads/${Date.now()}-${req.file.originalname}`;
+    const result = await s3Service.uploadFile(
+      key,
+      req.file.buffer,
+      req.file.mimetype
+    );
+
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ error: 'Upload failed' });
+  }
+});
+
+app.get('/api/files', async (req, res) => {
+  try {
+    const prefix = req.query.prefix as string;
+    const files = await s3Service.listFiles(prefix);
+    res.json({ success: true, data: files });
+  } catch (error) {
+    console.error('List files error:', error);
+    res.status(500).json({ error: 'Failed to list files' });
+  }
+});
+
+app.get('/api/download/:key(*)', async (req, res) => {
+  try {
+    const key = req.params.key;
+    const fileBuffer = await s3Service.downloadFile(key);
+    
+    res.set({
+      'Content-Type': 'application/octet-stream',
+      'Content-Disposition': `attachment; filename="${key.split('/').pop()}"`,
+    });
+    
+    res.send(fileBuffer);
+  } catch (error) {
+    console.error('Download error:', error);
+    res.status(500).json({ error: 'Download failed' });
+  }
+});
+
+app.delete('/api/files/:key(*)', async (req, res) => {
+  try {
+    const key = req.params.key;
+    await s3Service.deleteFile(key);
+    res.json({ success: true, message: 'File deleted successfully' });
+  } catch (error) {
+    console.error('Delete error:', error);
+    res.status(500).json({ error: 'Delete failed' });
+  }
+});
 
 // Route to fetch approved documents and their formatted metadata 
 app.get('/api/approved_documents_metadata', async (req, res) => {
@@ -206,10 +290,10 @@ app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
 });
 export default app;
-// To run this server, use the command: npx ts-node backend/server.ts
+// To run this server, use the command: npx ts-node server.ts
 // Ensure you have ts-node installed globally or in your project dependencies.
 // You can also add a script in package.json to start the server easily:
 // "scripts": {
-//   "start": "ts-node backend/server.ts"
+//   "start": "ts-node server.ts"
 // }
 // This will allow you to run the server with `npm start` or `yarn start`.

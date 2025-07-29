@@ -13,5 +13,43 @@
         "GITHUB_PERSONAL_ACCESS_TOKEN": "uQZawXOYb/eDCo72xXnxphK67SjAPSj/78GsIZCzBCQ"
       }
     }
-  }
+  },
+  "claude-dev.mcpServers": {
+    "s3": {
+      "command": "npx",
+      "args": ["@modelcontextprotocol/server-s3"],
+      "env": {
+        "AWS_ACCESS_KEY_ID": "minioadmin",
+        "AWS_SECRET_ACCESS_KEY": "minioadmin123",
+        "AWS_ENDPOINT_URL": "http://localhost:9000",
+        "AWS_REGION": "us-east-1",
+        "AWS_S3_FORCE_PATH_STYLE": "true"
+      }
+    }
+  },
+  "claude-dev.mcpServer": "s3",
+  "chat.experimental.mcpServer": "shadcn-ui",
+  "chat.experimental.mcpServerEnabled": true,
+  "chat.experimental.mcpServerEnabledForAll": true,
+  "chat.experimental.mcpServerEnabledForAllUsers": true,
+  "chat.experimental.mcpServerEnabledForAllWorkspaces": true,
+  "chat.experimental.mcpServerEnabledForAllProjects": true,
+  "chat.experimental.mcpServerEnabledForAllFiles": true,
+  "chat.experimental.mcpServerEnabledForAllDocuments": true,
+  "chat.experimental.mcpServerEnabledForAllRepositories": true,
+  "chat.experimental.mcpServerEnabledForAllBranches": true,
+  "chat.experimental.mcpServerEnabledForAllCommits": true,
+  "chat.experimental.mcpServerEnabledForAllPullRequests": true,
+  "chat.experimental.mcpServerEnabledForAllIssues": true,
+  "chat.experimental.mcpServerEnabledForAllComments": true,
+  "chat.experimental.mcpServerEnabledForAllDiscussions": true,
+  "chat.experimental.mcpServerEnabledForAllReleases": true,
+  "chat.experimental.mcpServerEnabledForAllMilestones": true,
+  "chat.experimental.mcpServerEnabledForAllLabels": true,
+  "chat.experimental.mcpServerEnabledForAllProjectsBoards": true,
+  "chat.experimental.mcpServerEnabledForAllProjectsIssues": true,
+  "chat.experimental.mcpServerEnabledForAllProjectsPullRequests": true,
+  "chat.experimental.mcpServerEnabledForAllProjectsDiscussions": true,
+  "chat.experimental.mcpServerEnabledForAllProjectsReleases": true,
+  "chat.experimental.mcpServerEnabledForAllProjectsMilestones": true,
 }

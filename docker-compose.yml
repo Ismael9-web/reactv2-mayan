@@ -1,6 +1,3 @@
-# Full Docker Compose with Postgres, Adminer (autofill), and MinIO
-
-
 version: '3.8'
 
 services:
@@ -9,12 +6,19 @@ services:
     restart: always
     shm_size: 128mb
     environment:
-      POSTGRES_USER: demodsi
+      POSTGRES_USER: demo
       POSTGRES_PASSWORD: mygeo-tresor
-      POSTGRES_DB: demodsi
+      POSTGRES_DB: demo
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - ~/workspace/dsi-budget/POSTGRES/postgres:/var/lib/postgresql/data
+    ports:
+      - "55432:55432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "demo"]
+      interval: 30s
+      timeout: 20s
+      retries: 5
 
   adminer:
     image: adminer
@@ -26,9 +30,9 @@ services:
     environment:
       ADMINER_DEFAULT_SERVER: db
       ADMINER_DESIGN: pepa-linha
-      ADMINER_DEFAULT_USER: demodsi
+      ADMINER_DEFAULT_USER: demo
       ADMINER_DEFAULT_PASSWORD: mygeo-tresor
-      ADMINER_DEFAULT_DB: demodsi
+      ADMINER_DEFAULT_DB: demo
 
   minio:
     container_name: minio
@@ -48,16 +52,6 @@ services:
       timeout: 20s
       retries: 3
 
-  minio-console:
-    container_name: minio-console
-    image: minio/console:latest
-    ports:
-      - "9090:9090"
-    environment:
-      - CONSOLE_MINIO_SERVER=http://minio:9000
-    depends_on:
-      - minio
-
   minio-client:
     container_name: minio-client
     image: minio/mc:latest
@@ -71,9 +65,6 @@ services:
       /usr/bin/mc config host add --quiet --api s3v4 minio http://minio:9000 minioadmin minioadmin;
       sleep infinity;
       "
-
-
 networks:
   default:
     driver: bridge
-

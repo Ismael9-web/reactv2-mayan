@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import api from "../../../services/api";
 import budgetLogo from "@/assets/budget.svg";
 import Cookies from "js-cookie";
+import { S3FileUpload } from './s3-file-upload';
+
 // Get username from cookie (if available)
 function getUsername() {
   return Cookies.get("username") || "Utilisateur";
@@ -55,6 +57,7 @@ import {
   SheetTitle,
   SheetClose
 } from "@/components/ui/sheet";
+import type { UploadResult } from "services/s3Service";
 // Helper to check if a date string (in any supported format) is before today
 function isDateExpired(dateStr?: string | null) {
   if (!dateStr) return false;
@@ -100,6 +103,12 @@ export default function ApprovedDocumentsPage() {
       })
       .catch(() => setLoading(false));
   }, []);
+
+  const handleUploadComplete = (result: UploadResult) => {
+    // Integrate with your existing document management
+    console.log('File uploaded:', result);
+    // You might want to save this to your backend/Mayan EDMS
+  };
 
   // Logout handler
   const handleLogout = () => {
@@ -349,6 +358,13 @@ export default function ApprovedDocumentsPage() {
           <SheetHeader>
             <SheetTitle>Effectuer un paiement</SheetTitle>
             <SheetClose asChild>
+              <div className="border rounded-lg p-6">
+                <h3 className="text-lg font-semibold mb-4">Upload New Documents</h3>
+                <S3FileUpload 
+                  onUploadComplete={handleUploadComplete}
+                  multiple={true}
+                />
+              </div>
               <button className="text-gray-500 hover:text-gray-800 absolute top-4 right-4">&times;</button>
             </SheetClose>
           </SheetHeader>
