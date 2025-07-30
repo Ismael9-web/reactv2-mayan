@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 // Update the import path below to the correct relative path if needed
 import { toast } from "sonner"
 import { useState } from "react"
+import api from "../../../services/api"; // adjust path as needed
 
 const voucherSchema = z.object({
   payee: z.string().min(1, "Payee is required"),
@@ -66,12 +67,9 @@ export default function PaymentVoucherForm({ prefill }: PaymentVoucherFormProps)
       if (data.file instanceof File) {
         formData.append("file", data.file)
       }
-      const res = await fetch("/api/payment-vouchers", {
-        method: "POST",
-        body: formData,
-      })
-      const result = await res.json()
-      if (!res.ok) throw new Error(result.error || "Failed")
+      await api.post("/payment-vouchers", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       toast.success("Voucher submitted.")
       reset()
     } catch (err: unknown) {

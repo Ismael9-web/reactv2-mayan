@@ -9,6 +9,7 @@ import { DocumentsApi } from './src/api/mayan-edms/apis/DocumentsApi';
 import * as runtime from './src/api/mayan-edms/runtime';
 import multer from 'multer';
 import { S3Service } from './src/services/s3Service';
+import { Pool } from 'pg';
 
 
 const app = express();
@@ -163,6 +164,43 @@ app.delete('/api/files/:key(*)', async (req, res) => {
   } catch (error) {
     console.error('Delete error:', error);
     res.status(500).json({ error: 'Delete failed' });
+  }
+});
+
+
+
+// Add this near the top of server.ts
+const pool = new Pool({
+  host: process.env.DB_HOST,
+  port: Number(process.env.DB_PORT),
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+});
+
+// Payment voucher submission route
+app.post('/api/payment-vouchers', upload.single('file'), async (req, res) => {
+  try {
+    const { payee, amount, description, date } = req.body;
+    let filePath: string | null = null;
+
+    if (req.file) {
+      // Save file to S3/MinIO
+      const key = `vouchers/${Date.now()}-${req.file.originalname}`;
+      await s3Service.uploadFile(key, req.file.buffer, req.file.mimetype);
+      filePath = key;
+    }
+
+    const result = await pool.query(
+      `INSERT INTO payment_vouchers (payee, amount, description, date, file_path)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [payee, amount, description, date, filePath]
+    );
+
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('Payment voucher submission error:', error);
+    res.status(500).json({ error: 'Failed to submit payment voucher' });
   }
 });
 
