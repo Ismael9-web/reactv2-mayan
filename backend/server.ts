@@ -1,5 +1,4 @@
-import dotenv from 'dotenv';
-dotenv.config();
+
 import express from 'express';
 import bodyParser from 'body-parser';
 import cors from 'cors';
@@ -10,10 +9,11 @@ import * as runtime from './src/api/mayan-edms/runtime';
 import multer from 'multer';
 import { S3Service } from './src/services/s3Service';
 import { Pool } from 'pg';
-
+import dotenv from 'dotenv';
 
 const app = express();
 const port = 5000;
+dotenv.config();
 
 
 
@@ -87,7 +87,8 @@ async function getAuthToken() {
         throw new Error('Failed to fetch auth token');
     }
 }
-
+//check the environment variables
+console.log(process.env);
 // S3 Configuration
 const s3Config = {
   endpoint: process.env.MINIO_ENDPOINT || 'http://localhost:9000',
