@@ -93,8 +93,8 @@ const s3Config = {
   endpoint: process.env.MINIO_ENDPOINT || 'http://localhost:9000',
   accessKeyId: process.env.MINIO_ACCESS_KEY || 'minioadmin',
   secretAccessKey: process.env.MINIO_SECRET_KEY || 'minioadmin123',
-  region: process.env.MINIO_REGION || 'us-east-1',
-  bucket: process.env.MINIO_BUCKET || 'user-uploads',
+  region: process.env.MINIO_REGION || 'Opposition-tresor',
+  bucket: process.env.MINIO_BUCKET || 'paiement', // Use 'paiement' bucket for R/W access
 };
 
 const s3Service = new S3Service(s3Config);
