@@ -37,8 +37,9 @@ export default function LoginForm(props: LoginFormProps) {
         { withCredentials: true }
       );
       if (response.data.token) {
-        // Set username cookie for dashboard display
+        // Set username and authToken cookies for dashboard and auth
         Cookies.set("username", username, { path: "/" });
+        Cookies.set("authToken", response.data.token, { path: "/" });
         if (onLoginSuccess) {
           onLoginSuccess();
         } else {
@@ -62,7 +63,7 @@ export default function LoginForm(props: LoginFormProps) {
     <div className={cn("flex flex-col gap-6", className)} {...rest}>
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Mission</CardTitle>
+          <CardTitle className="text-xl">DTG - Opposition</CardTitle>
           <CardDescription></CardDescription>
         </CardHeader>
         <CardContent>

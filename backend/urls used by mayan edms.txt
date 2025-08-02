@@ -1,0 +1,675 @@
+urls used by mayan edms to upload a specified file:
+
+1. 
+http://localhost/sources/sources/documents/wizard/
+Request URL
+http://localhost/sources/sources/documents/wizard/
+Request Method
+GET
+Status Code
+200 OK
+Remote Address
+[::1]:80
+Referrer Policy
+same-origin
+connection
+keep-alive
+content-language
+en-us
+content-length
+3781
+content-type
+text/html; charset=utf-8
+cross-origin-opener-policy
+same-origin
+date
+Thu, 31 Jul 2025 09:00:14 GMT
+referrer-policy
+same-origin
+server
+gunicorn
+set-cookie
+csrftoken=r2orI9UtvBTLamCbt6IwxqzXoGqRXVea; expires=Thu, 30 Jul 2026 09:00:14 GMT; Max-Age=31449600; Path=/; SameSite=Lax
+set-cookie
+sessionid=bqc6ixfxn50wk3lye7w1rjmzul17qjw8; expires=Thu, 14 Aug 2025 09:00:14 GMT; HttpOnly; Max-Age=1209600; Path=/; SameSite=Lax
+vary
+Cookie, origin, Accept-Language
+x-content-type-options
+nosniff
+x-frame-options
+DENY
+accept
+text/html, */*; q=0.01
+accept-encoding
+gzip, deflate, br, zstd
+accept-language
+en-US,en;q=0.9,fr;q=0.8
+connection
+keep-alive
+cookie
+sessionid=bqc6ixfxn50wk3lye7w1rjmzul17qjw8; adminer_key=f87074a64f376c829f72f4b27720b051; adminer_permanent=; adminer_sid=1b0cd3630cf23810051aecb87750fb77; csrftoken=r2orI9UtvBTLamCbt6IwxqzXoGqRXVea; authToken=a3ca321ac55e15278ff6fbbb1d0c4ba93bc9c40e; username=admin
+host
+localhost
+referer
+http://localhost/
+sec-ch-ua
+"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"
+sec-ch-ua-mobile
+?0
+sec-ch-ua-platform
+"Linux"
+sec-fetch-dest
+empty
+sec-fetch-mode
+cors
+sec-fetch-site
+same-origin
+user-agent
+Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+x-alt-referer
+/documents/documents/
+x-requested-with
+XMLHttpRequest
+
+2. 
+http://localhost/static/metadata/js/metadata_form.515b7094e13a.js?_=1753902182786
+Request URL
+http://localhost/static/metadata/js/metadata_form.515b7094e13a.js?_=1753902182786
+Request Method
+GET
+Status Code
+200 OK
+Remote Address
+[::1]:80
+Referrer Policy
+same-origin
+access-control-allow-origin
+*
+cache-control
+max-age=315360000, public, immutable
+connection
+keep-alive
+content-encoding
+gzip
+content-length
+216
+content-type
+text/javascript; charset="utf-8"
+cross-origin-opener-policy
+same-origin
+date
+Thu, 31 Jul 2025 09:00:40 GMT
+etag
+"678fce75-13c"
+last-modified
+Tue, 21 Jan 2025 16:42:29 GMT
+referrer-policy
+same-origin
+server
+gunicorn
+vary
+Accept-Encoding
+x-content-type-options
+nosniff
+accept
+text/javascript, application/javascript, application/ecmascript, application/x-ecmascript, */*; q=0.01
+accept-encoding
+gzip, deflate, br, zstd
+accept-language
+en-US,en;q=0.9,fr;q=0.8
+connection
+keep-alive
+cookie
+sessionid=bqc6ixfxn50wk3lye7w1rjmzul17qjw8; adminer_key=f87074a64f376c829f72f4b27720b051; adminer_permanent=; adminer_sid=1b0cd3630cf23810051aecb87750fb77; csrftoken=r2orI9UtvBTLamCbt6IwxqzXoGqRXVea; authToken=a3ca321ac55e15278ff6fbbb1d0c4ba93bc9c40e; username=admin
+host
+localhost
+referer
+http://localhost/
+sec-ch-ua
+"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"
+sec-ch-ua-mobile
+?0
+sec-ch-ua-platform
+"Linux"
+sec-fetch-dest
+empty
+sec-fetch-mode
+cors
+sec-fetch-site
+same-origin
+user-agent
+Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+x-alt-referer
+/sources/sources/documents/wizard/
+x-requested-with
+XMLHttpRequest
+
+3. 
+http://localhost/static/metadata/js/metadata_form.515b7094e13a.js?_=1753902182787
+Request URL
+http://localhost/static/metadata/js/metadata_form.515b7094e13a.js?_=1753902182787
+Request Method
+GET
+Status Code
+200 OK
+Remote Address
+[::1]:80
+Referrer Policy
+same-origin
+access-control-allow-origin
+*
+cache-control
+max-age=315360000, public, immutable
+connection
+keep-alive
+content-encoding
+gzip
+content-length
+216
+content-type
+text/javascript; charset="utf-8"
+cross-origin-opener-policy
+same-origin
+date
+Thu, 31 Jul 2025 09:00:40 GMT
+etag
+"678fce75-13c"
+last-modified
+Tue, 21 Jan 2025 16:42:29 GMT
+referrer-policy
+same-origin
+server
+gunicorn
+vary
+Accept-Encoding
+x-content-type-options
+nosniff
+accept
+text/javascript, application/javascript, application/ecmascript, application/x-ecmascript, */*; q=0.01
+accept-encoding
+gzip, deflate, br, zstd
+accept-language
+en-US,en;q=0.9,fr;q=0.8
+connection
+keep-alive
+cookie
+sessionid=bqc6ixfxn50wk3lye7w1rjmzul17qjw8; adminer_key=f87074a64f376c829f72f4b27720b051; adminer_permanent=; adminer_sid=1b0cd3630cf23810051aecb87750fb77; csrftoken=r2orI9UtvBTLamCbt6IwxqzXoGqRXVea; authToken=a3ca321ac55e15278ff6fbbb1d0c4ba93bc9c40e; username=admin
+host
+localhost
+referer
+http://localhost/
+sec-ch-ua
+"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"
+sec-ch-ua-mobile
+?0
+sec-ch-ua-platform
+"Linux"
+sec-fetch-dest
+empty
+sec-fetch-mode
+cors
+sec-fetch-site
+same-origin
+user-agent
+Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+x-alt-referer
+/sources/sources/documents/wizard/
+x-requested-with
+XMLHttpRequest
+
+4. 
+http://localhost/static/metadata/js/metadata_form.515b7094e13a.js?_=1753902182788
+Request URL
+http://localhost/static/metadata/js/metadata_form.515b7094e13a.js?_=1753902182788
+Request Method
+GET
+Status Code
+200 OK
+Remote Address
+[::1]:80
+Referrer Policy
+same-origin
+access-control-allow-origin
+*
+cache-control
+max-age=315360000, public, immutable
+connection
+keep-alive
+content-encoding
+gzip
+content-length
+216
+content-type
+text/javascript; charset="utf-8"
+cross-origin-opener-policy
+same-origin
+date
+Thu, 31 Jul 2025 09:00:40 GMT
+etag
+"678fce75-13c"
+last-modified
+Tue, 21 Jan 2025 16:42:29 GMT
+referrer-policy
+same-origin
+server
+gunicorn
+vary
+Accept-Encoding
+x-content-type-options
+nosniff
+accept
+text/javascript, application/javascript, application/ecmascript, application/x-ecmascript, */*; q=0.01
+accept-encoding
+gzip, deflate, br, zstd
+accept-language
+en-US,en;q=0.9,fr;q=0.8
+connection
+keep-alive
+cookie
+sessionid=bqc6ixfxn50wk3lye7w1rjmzul17qjw8; adminer_key=f87074a64f376c829f72f4b27720b051; adminer_permanent=; adminer_sid=1b0cd3630cf23810051aecb87750fb77; csrftoken=r2orI9UtvBTLamCbt6IwxqzXoGqRXVea; authToken=a3ca321ac55e15278ff6fbbb1d0c4ba93bc9c40e; username=admin
+host
+localhost
+referer
+http://localhost/
+sec-ch-ua
+"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"
+sec-ch-ua-mobile
+?0
+sec-ch-ua-platform
+"Linux"
+sec-fetch-dest
+empty
+sec-fetch-mode
+cors
+sec-fetch-site
+same-origin
+user-agent
+Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+x-alt-referer
+/sources/sources/documents/wizard/
+x-requested-with
+XMLHttpRequest
+
+5. 
+http://localhost/static/metadata/js/metadata_form.515b7094e13a.js?_=1753902182789
+	Request URL
+http://localhost/static/metadata/js/metadata_form.515b7094e13a.js?_=1753902182789
+Request Method
+GET
+Status Code
+200 OK
+Remote Address
+[::1]:80
+Referrer Policy
+same-origin
+access-control-allow-origin
+*
+cache-control
+max-age=315360000, public, immutable
+connection
+keep-alive
+content-encoding
+gzip
+content-length
+216
+content-type
+text/javascript; charset="utf-8"
+cross-origin-opener-policy
+same-origin
+date
+Thu, 31 Jul 2025 09:00:40 GMT
+etag
+"678fce75-13c"
+last-modified
+Tue, 21 Jan 2025 16:42:29 GMT
+referrer-policy
+same-origin
+server
+gunicorn
+vary
+Accept-Encoding
+x-content-type-options
+nosniff
+accept
+text/javascript, application/javascript, application/ecmascript, application/x-ecmascript, */*; q=0.01
+accept-encoding
+gzip, deflate, br, zstd
+accept-language
+en-US,en;q=0.9,fr;q=0.8
+connection
+keep-alive
+cookie
+sessionid=bqc6ixfxn50wk3lye7w1rjmzul17qjw8; adminer_key=f87074a64f376c829f72f4b27720b051; adminer_permanent=; adminer_sid=1b0cd3630cf23810051aecb87750fb77; csrftoken=r2orI9UtvBTLamCbt6IwxqzXoGqRXVea; authToken=a3ca321ac55e15278ff6fbbb1d0c4ba93bc9c40e; username=admin
+host
+localhost
+referer
+http://localhost/
+sec-ch-ua
+"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"
+sec-ch-ua-mobile
+?0
+sec-ch-ua-platform
+"Linux"
+sec-fetch-dest
+empty
+sec-fetch-mode
+cors
+sec-fetch-site
+same-origin
+user-agent
+Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+x-alt-referer
+/sources/sources/documents/wizard/
+x-requested-with
+XMLHttpRequest
+
+6
+http://localhost/sources/sources/documents/wizard/?document_create_wizard-current_step=document_type_selection&csrfmiddlewaretoken=yD2PR34WULwsjCnnYBzveM5QaElrD5THPvg6p2Offcf3jOPohx7RB2uDoaB8qQXH&document_type_selection-document_type=3
+Request URL
+http://localhost/sources/sources/documents/wizard/?document_create_wizard-current_step=document_type_selection&csrfmiddlewaretoken=yD2PR34WULwsjCnnYBzveM5QaElrD5THPvg6p2Offcf3jOPohx7RB2uDoaB8qQXH&document_type_selection-document_type=3
+Request Method
+POST
+Status Code
+200 OK
+Remote Address
+[::1]:80
+Referrer Policy
+same-origin
+access-control-allow-origin
+*
+connection
+keep-alive
+content-language
+en-us
+content-length
+3534
+content-type
+text/html; charset=utf-8
+cross-origin-opener-policy
+same-origin
+date
+Thu, 31 Jul 2025 09:01:31 GMT
+referrer-policy
+same-origin
+server
+gunicorn
+set-cookie
+csrftoken=r2orI9UtvBTLamCbt6IwxqzXoGqRXVea; expires=Thu, 30 Jul 2026 09:01:31 GMT; Max-Age=31449600; Path=/; SameSite=Lax
+set-cookie
+sessionid=bqc6ixfxn50wk3lye7w1rjmzul17qjw8; expires=Thu, 14 Aug 2025 09:01:31 GMT; HttpOnly; Max-Age=1209600; Path=/; SameSite=Lax
+vary
+Cookie, origin, Accept-Language
+x-content-type-options
+nosniff
+x-frame-options
+DENY
+accept
+text/html, */*; q=0.01
+accept-encoding
+gzip, deflate, br, zstd
+accept-language
+en-US,en;q=0.9,fr;q=0.8
+connection
+keep-alive
+content-length
+879
+content-type
+application/x-www-form-urlencoded; charset=UTF-8
+cookie
+sessionid=bqc6ixfxn50wk3lye7w1rjmzul17qjw8; adminer_key=f87074a64f376c829f72f4b27720b051; adminer_permanent=; adminer_sid=1b0cd3630cf23810051aecb87750fb77; csrftoken=r2orI9UtvBTLamCbt6IwxqzXoGqRXVea; authToken=a3ca321ac55e15278ff6fbbb1d0c4ba93bc9c40e; username=admin
+host
+localhost
+origin
+http://localhost
+referer
+http://localhost/
+sec-ch-ua
+"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"
+sec-ch-ua-mobile
+?0
+sec-ch-ua-platform
+"Linux"
+sec-fetch-dest
+empty
+sec-fetch-mode
+cors
+sec-fetch-site
+same-origin
+user-agent
+Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+x-alt-referer
+/sources/sources/documents/wizard/
+x-requested-with
+XMLHttpRequest
+
+7. 
+http://localhost/static/tags/js/tags_form.8f2cbf40dcbb.js?_=1753902182790
+Request URL
+http://localhost/static/tags/js/tags_form.8f2cbf40dcbb.js?_=1753902182790
+Request Method
+GET
+Status Code
+200 OK
+Remote Address
+[::1]:80
+Referrer Policy
+same-origin
+access-control-allow-origin
+*
+cache-control
+max-age=315360000, public, immutable
+connection
+keep-alive
+content-encoding
+gzip
+content-length
+347
+content-type
+text/javascript; charset="utf-8"
+cross-origin-opener-policy
+same-origin
+date
+Thu, 31 Jul 2025 09:01:31 GMT
+etag
+"678fce75-317"
+last-modified
+Tue, 21 Jan 2025 16:42:29 GMT
+referrer-policy
+same-origin
+server
+gunicorn
+vary
+Accept-Encoding
+x-content-type-options
+nosniff
+accept
+text/javascript, application/javascript, application/ecmascript, application/x-ecmascript, */*; q=0.01
+accept-encoding
+gzip, deflate, br, zstd
+accept-language
+en-US,en;q=0.9,fr;q=0.8
+connection
+keep-alive
+cookie
+sessionid=bqc6ixfxn50wk3lye7w1rjmzul17qjw8; adminer_key=f87074a64f376c829f72f4b27720b051; adminer_permanent=; adminer_sid=1b0cd3630cf23810051aecb87750fb77; csrftoken=r2orI9UtvBTLamCbt6IwxqzXoGqRXVea; authToken=a3ca321ac55e15278ff6fbbb1d0c4ba93bc9c40e; username=admin
+host
+localhost
+referer
+http://localhost/
+sec-ch-ua
+"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"
+sec-ch-ua-mobile
+?0
+sec-ch-ua-platform
+"Linux"
+sec-fetch-dest
+empty
+sec-fetch-mode
+cors
+sec-fetch-site
+same-origin
+user-agent
+Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+x-alt-referer
+/sources/sources/documents/wizard/
+x-requested-with
+XMLHttpRequest
+
+8. 
+http://localhost/sources/sources/documents/wizard/?document_create_wizard-current_step=metadata_entry&csrfmiddlewaretoken=lWoK3jI0oraC7lt7iBs8m4JFE1dDVwvxCOC1BisjJSTd7xV8Bx0uJk8sSxtkIhzx&metadata_entry-TOTAL_FORMS=4&metadata_entry-INITIAL_FORMS=4&metadata_entry-MIN_NUM_FORMS=0&metadata_entry-MAX_NUM_FORMS=1000&metadata_entry-0-metadata_type_id=11&metadata_entry-0-metadata_type_name=Date+%28Required%29&metadata_entry-0-value=01-01-2028&metadata_entry-0-update=on&metadata_entry-1-metadata_type_id=13&metadata_entry-1-metadata_type_name=Mode+%28Required%29&metadata_entry-1-value=cash&metadata_entry-1-update=on&metadata_entry-2-metadata_type_id=12&metadata_entry-2-metadata_type_name=Montant+%28Required%29&metadata_entry-2-value=20000&metadata_entry-2-update=on&metadata_entry-3-metadata_type_id=10&metadata_entry-3-metadata_type_name=Payeur+%28Required%29&metadata_entry-3-value=Zahra+Ahmed+Moumin&metadata_entry-3-update=on
+Request URL
+http://localhost/sources/sources/documents/wizard/?document_create_wizard-current_step=metadata_entry&csrfmiddlewaretoken=lWoK3jI0oraC7lt7iBs8m4JFE1dDVwvxCOC1BisjJSTd7xV8Bx0uJk8sSxtkIhzx&metadata_entry-TOTAL_FORMS=4&metadata_entry-INITIAL_FORMS=4&metadata_entry-MIN_NUM_FORMS=0&metadata_entry-MAX_NUM_FORMS=1000&metadata_entry-0-metadata_type_id=11&metadata_entry-0-metadata_type_name=Date+%28Required%29&metadata_entry-0-value=01-01-2028&metadata_entry-0-update=on&metadata_entry-1-metadata_type_id=13&metadata_entry-1-metadata_type_name=Mode+%28Required%29&metadata_entry-1-value=cash&metadata_entry-1-update=on&metadata_entry-2-metadata_type_id=12&metadata_entry-2-metadata_type_name=Montant+%28Required%29&metadata_entry-2-value=20000&metadata_entry-2-update=on&metadata_entry-3-metadata_type_id=10&metadata_entry-3-metadata_type_name=Payeur+%28Required%29&metadata_entry-3-value=Zahra+Ahmed+Moumin&metadata_entry-3-update=on
+Request Method
+POST
+Status Code
+200 OK
+Remote Address
+[::1]:80
+Referrer Policy
+same-origin
+access-control-allow-origin
+*
+connection
+keep-alive
+content-language
+en-us
+content-length
+3576
+content-type
+text/html; charset=utf-8
+cross-origin-opener-policy
+same-origin
+date
+Thu, 31 Jul 2025 09:02:28 GMT
+referrer-policy
+same-origin
+server
+gunicorn
+set-cookie
+csrftoken=r2orI9UtvBTLamCbt6IwxqzXoGqRXVea; expires=Thu, 30 Jul 2026 09:02:28 GMT; Max-Age=31449600; Path=/; SameSite=Lax
+set-cookie
+sessionid=bqc6ixfxn50wk3lye7w1rjmzul17qjw8; expires=Thu, 14 Aug 2025 09:02:28 GMT; HttpOnly; Max-Age=1209600; Path=/; SameSite=Lax
+vary
+Cookie, origin, Accept-Language
+x-content-type-options
+nosniff
+x-frame-options
+DENY
+accept
+text/html, */*; q=0.01
+accept-encoding
+gzip, deflate, br, zstd
+accept-language
+en-US,en;q=0.9,fr;q=0.8
+connection
+keep-alive
+content-length
+150
+content-type
+application/x-www-form-urlencoded; charset=UTF-8
+cookie
+sessionid=bqc6ixfxn50wk3lye7w1rjmzul17qjw8; adminer_key=f87074a64f376c829f72f4b27720b051; adminer_permanent=; adminer_sid=1b0cd3630cf23810051aecb87750fb77; csrftoken=r2orI9UtvBTLamCbt6IwxqzXoGqRXVea; authToken=a3ca321ac55e15278ff6fbbb1d0c4ba93bc9c40e; username=admin
+host
+localhost
+origin
+http://localhost
+referer
+http://localhost/
+sec-ch-ua
+"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"
+sec-ch-ua-mobile
+?0
+sec-ch-ua-platform
+"Linux"
+sec-fetch-dest
+empty
+sec-fetch-mode
+cors
+sec-fetch-site
+same-origin
+user-agent
+Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+x-alt-referer
+/sources/sources/documents/wizard/
+x-requested-with
+XMLHttpRequest
+
+
+9. 
+http://localhost/sources/sources/any/documents/upload/?document_type_id=3&metadata0_metadata_type_id=11&metadata0_value=2028-01-01&metadata1_metadata_type_id=13&metadata1_value=cash&metadata2_metadata_type_id=12&metadata2_value=20000&metadata3_metadata_type_id=10&metadata3_value=Zahra+Ahmed+Moumin&cabinets=4
+Request URL
+http://localhost/sources/sources/any/documents/upload/?document_type_id=3&metadata0_metadata_type_id=11&metadata0_value=2028-01-01&metadata1_metadata_type_id=13&metadata1_value=cash&metadata2_metadata_type_id=12&metadata2_value=20000&metadata3_metadata_type_id=10&metadata3_value=Zahra+Ahmed+Moumin&cabinets=4
+Request Method
+POST
+Status Code
+278 Unknown Status Code
+Remote Address
+[::1]:80
+Referrer Policy
+same-origin
+access-control-allow-origin
+*
+connection
+keep-alive
+content-language
+en-us
+content-length
+0
+content-type
+text/html; charset=utf-8
+cross-origin-opener-policy
+same-origin
+date
+Thu, 31 Jul 2025 09:12:05 GMT
+location
+/sources/sources/any/documents/upload/?document_type_id=3&metadata0_metadata_type_id=11&metadata0_value=2028-01-01&metadata1_metadata_type_id=13&metadata1_value=cash&metadata2_metadata_type_id=12&metadata2_value=20000&metadata3_metadata_type_id=10&metadata3_value=Zahra+Ahmed+Moumin&cabinets=4
+referrer-policy
+same-origin
+server
+gunicorn
+set-cookie
+messages=W1siX19qc29uX21lc3NhZ2UiLDAsMjUsIk5ldyBkb2N1bWVudCBxdWV1ZWQgZm9yIHVwbG9hZCBhbmQgd2lsbCBiZSBhdmFpbGFibGUgc2hvcnRseS4iLCIiXV0:1uhPKX:ui1WXWnmthBdtWW2cVETj6X_OeG53Q6Q6smeh5kj6TY; HttpOnly; Path=/; SameSite=Lax
+vary
+origin, Accept-Language, Cookie
+x-content-type-options
+nosniff
+x-frame-options
+DENY
+accept
+application/json
+accept-encoding
+gzip, deflate, br, zstd
+accept-language
+en-US,en;q=0.9,fr;q=0.8
+cache-control
+no-cache
+connection
+keep-alive
+content-length
+12156
+content-type
+multipart/form-data; boundary=----WebKitFormBoundaryUdy0GJrqbpGb1FI1
+cookie
+sessionid=bqc6ixfxn50wk3lye7w1rjmzul17qjw8; adminer_key=f87074a64f376c829f72f4b27720b051; adminer_permanent=; adminer_sid=1b0cd3630cf23810051aecb87750fb77; csrftoken=r2orI9UtvBTLamCbt6IwxqzXoGqRXVea; authToken=a3ca321ac55e15278ff6fbbb1d0c4ba93bc9c40e; username=admin
+host
+localhost
+origin
+http://localhost
+referer
+http://localhost/
+sec-ch-ua
+"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"
+sec-ch-ua-mobile
+?0
+sec-ch-ua-platform
+"Linux"
+sec-fetch-dest
+empty
+sec-fetch-mode
+cors
+sec-fetch-site
+same-origin
+user-agent
+Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+x-requested-with
+XMLHttpRequest

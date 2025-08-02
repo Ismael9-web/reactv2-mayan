@@ -9,39 +9,41 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-// Update the import path below to the correct relative path if needed
 import { toast } from "sonner"
 import { useState } from "react"
-import api from "../../../services/api"; // adjust path as needed
+import api from "../../../services/api";
 
 const voucherSchema = z.object({
-  payee: z.string().min(1, "Payee is required"),
-  amount: z.preprocess(
+  payeur: z.string().min(1, "Le payeur est requis"),
+  montant: z.preprocess(
     (val) => (typeof val === "string" && val.trim() !== "" ? Number(val) : val),
-    z.number().min(0.01, "Amount is required")
+    z.number().min(0.01, "Le montant est requis")
   ),
   description: z.string().optional(),
-  date: z.string().min(1, "Date is required"),
+  date: z.string().min(1, "La date est requise"),
+  mode: z.string().min(1, "Le mode de paiement est requis"),
   file: z
     .any()
-    .refine((file) => file instanceof File, { message: "File is required" }),
+    .refine((file) => file instanceof File, { message: "Le fichier est requis" }),
 })
 
 
 
 interface PaymentVoucherFormProps {
   prefill?: Record<string, string>;
+  onSuccess?: () => void;
 }
 
 
-export default function PaymentVoucherForm({ prefill }: PaymentVoucherFormProps) {
+export default function PaymentVoucherForm({ prefill, onSuccess }: PaymentVoucherFormProps) {
   const [loading, setLoading] = useState(false)
 
   const defaultValues = {
-    payee: prefill?.payee || '',
-    amount: prefill?.amount || '',
+    payeur: prefill?.payeur || '',
+    montant: prefill?.montant || '',
     date: prefill?.date || prefill?.['date-initial'] || prefill?.['DATE-INITIAL'] || '',
     description: prefill?.description || '',
+    mode: prefill?.mode || '',
     file: undefined,
   };
 
@@ -56,88 +58,120 @@ export default function PaymentVoucherForm({ prefill }: PaymentVoucherFormProps)
     defaultValues,
   })
 
+  const [showModal, setShowModal] = useState(false);
   const onSubmit = async (data: z.infer<typeof voucherSchema>) => {
     setLoading(true)
     try {
-      const formData = new FormData()
-      formData.append("payee", data.payee)
-      formData.append("amount", String(data.amount))
-      formData.append("description", data.description || "")
-      formData.append("date", data.date)
-      if (data.file instanceof File) {
-        formData.append("file", data.file)
-      }
-      await api.post("/payment-vouchers", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+      // 1. Upload document to Mayan (only file and document_type_id=3)
+      const formData = new FormData();
+      formData.append("file", data.file);
+      formData.append("document_type_id", "3");
+
+      await api.post("/mayan/documents", formData, {
+        headers: {
+          "Accept": "application/json",
+          // Let browser set Content-Type for FormData
+        },
       });
-      toast.success("Voucher submitted.")
-      reset()
+
+      // 2. Save voucher in backend DB
+      const backendForm = new FormData();
+      backendForm.append("payee", data.payeur);
+      backendForm.append("amount", String(data.montant));
+      backendForm.append("description", data.description || "");
+      backendForm.append("date", data.date);
+      backendForm.append("file", data.file);
+      await api.post("/payment-vouchers", backendForm, {
+        headers: { "Accept": "application/json" },
+      });
+
+      setShowModal(true);
+      if (onSuccess) onSuccess();
+      reset();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "An unknown error occurred")
+      toast.error(err instanceof Error ? err.message : "Une erreur inconnue est survenue");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   return (
-    <Card className="max-w-xl mx-auto p-4">
-      <CardHeader>
-        <CardTitle>Create Payment Voucher</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <Label htmlFor="payee">Payee</Label>
-            <Input id="payee" {...register("payee")} />
-            {errors.payee && <p className="text-sm text-red-500">{errors.payee.message}</p>}
-          </div>
+    <>
+      <Card className="max-w-xl mx-auto p-4">
+        <CardHeader>
+          <CardTitle>Enregistrement du paiement</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div>
+              <Label htmlFor="payeur">Payeur</Label>
+              <Input id="payeur" placeholder="Nom du payeur" {...register("payeur")}/>
+              {errors.payeur && <p className="text-sm text-red-500">{errors.payeur.message}</p>}
+            </div>
 
-          <div>
-            <Label htmlFor="amount">Amount</Label>
-            <Input id="amount" type="number" step="0.01" {...register("amount")} />
-            {errors.amount && <p className="text-sm text-red-500">{errors.amount.message}</p>}
-          </div>
+            <div>
+              <Label htmlFor="montant">Montant</Label>
+              <Input id="montant" type="number" step="0.01" placeholder="Montant en FCFA" {...register("montant")}/>
+              {errors.montant && <p className="text-sm text-red-500">{errors.montant.message}</p>}
+            </div>
 
-          <div>
-            <Label htmlFor="date">Date</Label>
-            <Input id="date" type="date" {...register("date")} />
-            {errors.date && <p className="text-sm text-red-500">{errors.date.message}</p>}
-          </div>
+            <div>
+              <Label htmlFor="date">Date</Label>
+              <Input id="date" type="date" {...register("date")}/>
+              {errors.date && <p className="text-sm text-red-500">{errors.date.message}</p>}
+            </div>
 
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <textarea
-              id="description"
-              className="w-full border rounded px-3 py-2"
-              {...register("description")}
-            />
-          </div>
+            <div>
+              <Label htmlFor="mode">Mode de paiement</Label>
+              <Input id="mode" placeholder="Espèces, Chèque, Virement..." {...register("mode")}/>
+              {errors.mode && <p className="text-sm text-red-500">{errors.mode.message}</p>}
+            </div>
 
-          <div>
-            <Label htmlFor="file">Upload Document</Label>
-            <Input
-              id="file"
-              type="file"
-              accept=".pdf,.jpg,.png"
-              onChange={(e) => {
-                const files = (e.target as HTMLInputElement).files;
-                if (files && files[0]) {
-                  setValue("file", files[0], { shouldValidate: true });
-                }
-              }}
-            />
-            {/* Register file field for validation tracking */}
-            <input type="hidden" {...register("file")}/>
-            {errors.file && typeof errors.file.message === 'string' && (
-              <p className="text-sm text-red-500">{errors.file.message}</p>
-            )}
-          </div>
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <textarea
+                id="description"
+                className="w-full border rounded px-3 py-2"
+                placeholder="Description (optionnelle)"
+                {...register("description")}
+              />
+            </div>
 
-          <Button type="submit" disabled={loading}>
-            {loading ? "Submitting..." : "Submit Voucher"}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+            <div>
+              <Label htmlFor="file">Joindre un document</Label>
+              <Input
+                id="file"
+                type="file"
+                accept=".pdf,.jpg,.png"
+                onChange={(e) => {
+                  const files = (e.target as HTMLInputElement).files;
+                  if (files && files[0]) {
+                    setValue("file", files[0], { shouldValidate: true });
+                  }
+                }}
+              />
+              {/* Register file field for validation tracking */}
+              <input type="hidden" {...register("file")}/>
+              {errors.file && typeof errors.file.message === 'string' && (
+                <p className="text-sm text-red-500">{errors.file.message}</p>
+              )}
+            </div>
+
+            <Button type="submit" disabled={loading}>
+              {loading ? "Soumission..." : "Enregistrer"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+      {showModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+          <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+            <h2 className="text-2xl font-bold mb-4 text-green-600">Enregistré avec succès</h2>
+            <p className="mb-6">Le paiement a été soumis et archivé.</p>
+            <Button onClick={() => setShowModal(false)} className="bg-green-600 text-white">Fermer</Button>
+          </div>
+        </div>
+      )}
+    </>
   )
 }

@@ -1,4 +1,3 @@
-
 import express from 'express';
 import bodyParser from 'body-parser';
 import cors from 'cors';
@@ -109,6 +108,155 @@ const upload = multer({
 });
 
 // S3 Routes
+// --- MAYAN EDMS DOCUMENT UPLOAD & METADATA ENDPOINTS (AXIOS-BASED) ---
+// Upload a document to Mayan EDMS (document_type: paiement)
+app.post('/api/mayan/documents', upload.single('file'), async (req, res) => {
+  try {
+    console.log('--- /api/mayan/documents called ---');
+    console.log('Request headers:', req.headers);
+    console.log('Request cookies:', req.cookies);
+    console.log('Request body:', req.body);
+    console.log('Received file:', req.file);
+    if (!req.file) {
+      console.log('No file provided in request.');
+      return res.status(400).json({ error: 'No file provided' });
+    }
+
+    // Log form fields if any (for debugging formData)
+    if (req.body) {
+      Object.keys(req.body).forEach(key => {
+        console.log(`Form field: ${key} =`, req.body[key]);
+      });
+    }
+
+    // Get cookies and CSRF token from request
+    const sessionid = req.cookies.sessionid;
+    const csrftoken = req.cookies.csrftoken;
+    console.log('sessionid:', sessionid);
+    console.log('csrftoken:', csrftoken);
+
+    // Prepare form-data for Mayan
+    const form = new (require('form-data'))();
+    form.append('document_type_id', 3); // Always use 3 for paiement
+    form.append('file', req.file.buffer, req.file.originalname);
+    if (req.body.description) {
+      form.append('description', req.body.description);
+    }
+
+    // Log form-data fields before sending to Mayan
+    console.log('FormData to send to Mayan:');
+    for (const key of Object.keys(form)) {
+      console.log(`  ${key}:`, form[key]);
+    }
+
+    // Send to Mayan with correct headers
+    const uploadRes = await axios.post('http://localhost/api/v4/documents/upload/', form, {
+      headers: {
+        ...form.getHeaders(),
+        'accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-CSRFTOKEN': csrftoken,
+        'Cookie': `sessionid=${sessionid}; csrftoken=${csrftoken}`,
+        'Referer': 'http://localhost:5173',
+      },
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+      withCredentials: true,
+    });
+    console.log('Mayan upload response:', uploadRes.data);
+    res.json({ success: true, data: uploadRes.data });
+  } catch (error) {
+    console.error('Mayan document upload error:', error);
+    if (axios.isAxiosError(error)) {
+      if (error.response) {
+        console.error('Mayan upload error response status:', error.response.status);
+        console.error('Mayan upload error response data:', error.response.data);
+        res.status(500).json({
+          error: 'Failed to upload document to Mayan',
+          mayanStatus: error.response.status,
+          mayanData: error.response.data,
+        });
+        return;
+      } else if (error.request) {
+        console.error('Mayan upload error: No response received');
+        res.status(500).json({ error: 'No response from Mayan', details: error.message });
+        return;
+      }
+    }
+    res.status(500).json({ error: 'Failed to upload document to Mayan', details: error instanceof Error ? error.message : String(error) });
+  }
+});
+
+// Add metadata to a document (using axios)
+app.post('/api/mayan/documents/:id/metadata', async (req, res) => {
+  try {
+    const token = await getAuthToken();
+    const { id } = req.params;
+    const { metadata_type_id, value } = req.body;
+    const result = await axios.post(
+      `http://localhost/api/v4/documents/${id}/metadata/`,
+      { metadata_type_id, value },
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Referer': 'http://localhost:5173',
+        },
+      }
+    );
+    res.json({ success: true, data: result.data });
+  } catch (error) {
+    console.error('Mayan add metadata error:', error);
+    res.status(500).json({ error: 'Failed to add metadata' });
+  }
+});
+
+// Get all metadata for a document (using axios)
+app.get('/api/mayan/documents/:id/metadata', async (req, res) => {
+  try {
+    const token = await getAuthToken();
+    const sessionid = req.cookies.sessionid;
+    const csrftoken = req.cookies.csrftoken;
+    const { id } = req.params;
+    const result = await axios.get(
+      `http://localhost/api/v4/documents/${id}/metadata/`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Cookie': `sessionid=${sessionid}; csrftoken=${csrftoken}`,
+          'X-CSRFTOKEN': csrftoken,
+          'Referer': 'http://localhost:5173',
+        },
+        withCredentials: true,
+      }
+    );
+    res.json({ success: true, data: result.data });
+  } catch (error) {
+    console.error('Mayan get metadata error:', error);
+    res.status(500).json({ error: 'Failed to get metadata' });
+  }
+});25200
+
+// Delete a metadata entry from a document (using axios)
+app.delete('/api/mayan/documents/:id/metadata/:metadata_id', async (req, res) => {
+  try {
+    const token = await getAuthToken();
+    const { id, metadata_id } = req.params;
+    await axios.delete(
+      `http://localhost/api/v4/documents/${id}/metadata/${metadata_id}/`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Referer': 'http://localhost:5173',
+        },
+      }
+    );
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Mayan delete metadata error:', error);
+    res.status(500).json({ error: 'Failed to delete metadata' });
+  }
+});
 app.post('/api/upload', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
@@ -289,16 +437,53 @@ app.get('/api/approved_documents_metadata', async (req, res) => {
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
+        // Make login request to Mayan EDMS
         const tokenResponse = await axios.post('http://localhost/api/v4/auth/token/obtain/', {
             username,
             password,
-        }, { headers: { 'Content-Type': 'application/json' } });
+        }, {
+            headers: { 'Content-Type': 'application/json' },
+            withCredentials: true
+        });
         const token = tokenResponse.data.token;
-        res
-            .cookie('authToken', token, { httpOnly: false, secure: false, sameSite: 'lax', maxAge: 24 * 60 * 60 * 1000 })
-            .json({ token });
-    } catch (error: any) {
-        console.error('Login error:', error.message);
+
+        // Extract sessionid and csrftoken from set-cookie headers if present
+        let sessionid: string | null = null;
+        let csrftoken: string | null = null;
+        const setCookie = tokenResponse.headers['set-cookie'];
+        if (setCookie && Array.isArray(setCookie)) {
+            setCookie.forEach(cookieStr => {
+                if (cookieStr.startsWith('sessionid=')) {
+                    sessionid = cookieStr.split(';')[0].split('=')[1];
+                }
+                if (cookieStr.startsWith('csrftoken=')) {
+                    csrftoken = cookieStr.split(';')[0].split('=')[1];
+                }
+            });
+        }
+
+        // Fallback: try to get from response data if available
+        if (!sessionid && tokenResponse.data.sessionid) sessionid = tokenResponse.data.sessionid;
+        if (!csrftoken && tokenResponse.data.csrftoken) csrftoken = tokenResponse.data.csrftoken;
+
+        // Set cookies
+        res.cookie('authToken', token, { httpOnly: false, secure: false, sameSite: 'lax', maxAge: 24 * 60 * 60 * 1000, path: '/' });
+        if (sessionid) {
+            res.cookie('sessionid', sessionid, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 24 * 60 * 60 * 1000, path: '/' });
+        }
+        if (csrftoken) {
+            res.cookie('csrftoken', csrftoken, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 24 * 60 * 60 * 1000, path: '/' });
+        }
+
+        res.json({ token, sessionid, csrftoken });
+    } catch (error) {
+        let msg = 'Unknown error';
+        if (typeof error === 'object' && error !== null && 'message' in error) {
+            msg = (error as any).message;
+        } else if (typeof error === 'string') {
+            msg = error;
+        }
+        console.error('Login error:', msg);
         res.status(401).json({ error: 'Invalid credentials' });
     }
 });

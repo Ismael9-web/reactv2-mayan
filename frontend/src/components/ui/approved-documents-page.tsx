@@ -50,6 +50,7 @@ function formatMoneyFr(val?: string) {
 }
 import { exportTableToPDF } from "../ui/export-table-to-pdf";
 import PaymentVoucherForm from "../forms/PaymentVoucherForm";
+import { toast } from "sonner";
 import {
   Sheet,
   SheetContent,
@@ -84,6 +85,7 @@ interface RowData {
 
 export default function ApprovedDocumentsPage() {
   const [showPaymentSheet, setShowPaymentSheet] = useState(false);
+  const [paidRows, setPaidRows] = useState<Set<number>>(new Set());
   const [prefillData, setPrefillData] = useState<Record<string, string> | null>(null);
   const [data, setData] = useState<RowData[]>([]);
   const [labels, setLabels] = useState<string[]>([]);
@@ -101,7 +103,17 @@ export default function ApprovedDocumentsPage() {
         setData(res.data.rows);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((err) => {
+        setLoading(false);
+        if (err?.response?.status === 401) {
+          // Clear cookies and redirect to login
+          Cookies.remove("authToken", { path: "/" });
+          Cookies.remove("sessionid", { path: "/" });
+          Cookies.remove("csrftoken", { path: "/" });
+          Cookies.remove("username", { path: "/" });
+          window.location.replace("/login");
+        }
+      });
   }, []);
 
   const handleUploadComplete = (result: UploadResult) => {
@@ -112,11 +124,11 @@ export default function ApprovedDocumentsPage() {
 
   // Logout handler
   const handleLogout = () => {
-    Cookies.remove("authToken");
-    Cookies.remove("sessionid");
-    Cookies.remove("csrftoken");
-    Cookies.remove("username");
-    window.location.href = "/login";
+    Cookies.remove("authToken", { path: "/" });
+    Cookies.remove("sessionid", { path: "/" });
+    Cookies.remove("csrftoken", { path: "/" });
+    Cookies.remove("username", { path: "/" });
+    window.location.replace("/login");
   };
 
   // Filtering
@@ -172,6 +184,15 @@ export default function ApprovedDocumentsPage() {
       setSelectedRows(new Set());
     } else {
       setSelectedRows(new Set(paginatedData.map((_, i) => i)));
+    }
+  };
+
+  // Handler for successful voucher submission
+  const handleVoucherSuccess = (rowIdx?: number) => {
+    toast.success("Le paiement a été soumis avec succès.");
+    setShowPaymentSheet(false);
+    if (typeof rowIdx === 'number') {
+      setPaidRows(prev => new Set(prev).add(rowIdx));
     }
   };
 
@@ -306,6 +327,14 @@ export default function ApprovedDocumentsPage() {
                                 }
                               }
                               const expired = isDateExpired(dateFin);
+                              const isPaid = paidRows.has(i);
+                              if (isPaid) {
+                                return (
+                                  <button className="px-3 py-2 rounded bg-gray-400 text-white text-sm font-semibold cursor-not-allowed" disabled>
+                                    Payé
+                                  </button>
+                                );
+                              }
                               return (
                                 <button
                                   className={`px-3 py-2 rounded text-white text-sm font-semibold ${expired ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}
@@ -369,7 +398,7 @@ export default function ApprovedDocumentsPage() {
             </SheetClose>
           </SheetHeader>
           <div className="p-2">
-            <PaymentVoucherForm prefill={prefillData || undefined} />
+            <PaymentVoucherForm prefill={prefillData || undefined} onSuccess={() => handleVoucherSuccess(selectedRows.values().next().value)} />
           </div>
         </SheetContent>
       </Sheet>

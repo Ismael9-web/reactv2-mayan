@@ -1,0 +1,237 @@
+POST   /documents/upload/         --create a new document and a new document file.	IT IS WORKING UPLOADS A FILE/S  
+example:
+curl -v -X POST http://localhost:5000/api/mayan/documents -f "file=@backend/server.js" -f "document_type_id=3" --cookie "sessionid=bqc6ixfxn50wk3lye7w1rjmzul17qjw8; csrftoken=r2ori9utvbtlamcbt6iwxqzxogqrxvea"
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+POST   /documents/{document_id}/metadata/   --add an existing metadata type and value to the selected document.
+						{
+						  "metadata_type_id": [      which are 37, 38, 39,40
+						    "This field is required."
+						  ]
+						}
+	example:
+	curl -X POST \
+  http://localhost/api/v4/documents/12345/metadata/ \
+  -H 'content-type: application/json' \
+  -H "X-CSRF-TOKEN: r2ori9utvbtlamcbt6iwxqzxogqrxvea" \
+  -H 'Cookie: sessionid=bqc6ixfxn50wk3lye7w1rjmzul17qjw8' \
+  -d '{
+    "document": {
+      "description": "string",
+      "document_type": {
+        "delete_time_period": 2147483647,
+        "delete_time_unit": "days",
+        "document_stub_expiration_interval": 9223372036854776000,
+        "document_stub_pruning_enabled": true,
+        "filename_generator_backend": "string",
+        "filename_generator_backend_arguments": "string",
+        "label": "string",
+        "trash_time_period": 2147483647,
+        "trash_time_unit": "days"
+      },
+      "file_latest": {
+        "comment": "string",
+        "filename": "string",
+        "pages_first": {}
+      },
+      "label": "string",
+      "language": "string",
+      "version_active": {
+        "active": true,
+        "comment": "string",
+        "pages_first": {
+          "content_type": {},
+          "content_type_id": 0,
+          "object_id": 2147483647,
+          "page_number": 2147483647
+        }
+      }
+    },
+    "metadata_type": {
+      "default": "string",
+      "label": "string",
+      "lookup": "string",
+      "name": "string",
+      "parser": "string",
+      "parser_arguments": "string",
+      "validation": "string",
+      "validation_arguments": "string"
+    },
+    "value": "string"
+  }'
+	
+-------------------------------------------------------------------------------------------------------------------------------------
+
+GET    /documents/{document_id}/metadata/    --returns a list of selected document's metadata types and values.
+
+
+-------------------------------------------------------------------------------------------------------------------------------------
+GET    /documents/{document_id}/metadata/{metadata_id}/   --return the details of the selected document metadata type and value.
+
+metadata_id : [37 : 'Date' , 38 : 'Mode', 39 : 'Montant', 40 : 'Payeur']
+
+	curl -X 'GET' \
+                'http://localhost/api/v4/documents/5/metadata/39/' \
+                -H 'accept: application/json' \
+                -H 'X-CSRFTOKEN: nzHFjEgGiW9MztaYjIJtsiUch51GZjmXOfNIpebYZn8Uk3849H1mfe4CQhgU7mVd' \
+                -H 'Cookie: sessionid=bqc6ixfxn50wk3lye7w1rjmzul17qjw8' \
+                | jq -r
+
+-------------------------------------------------------------------------------------------------------------------------------------
+PUT    /documents/{document_id}/metadata/{metadata_id}/   --edit the selected document metadata type and value. (full update)
+metadata_id [37 : 'Date' , 38 : 'Mode', 39 : 'Montant', 40 : 'Payeur']
+
+PATCH  /documents/{document_id}/metadata/{metadata_id}/   --edit the selected document metadata type and value. (partial update)
+
+
+
+{
+  "document": {
+    "datetime_created": "2025-07-30T15:00:25.218201+03:00",
+    "description": "",
+    "document_change_type_url": "http://localhost/api/v4/documents/5/type/change/",
+    "document_type": {
+      "delete_time_period": 30,
+      "delete_time_unit": "days",
+      "document_stub_expiration_interval": 86400,
+      "document_stub_pruning_enabled": true,
+      "documents_url": "http://localhost/api/v4/document_types/3/documents/",
+      "filename_generator_backend": "uuid",
+      "filename_generator_backend_arguments": "",
+      "id": 3,
+      "label": "Paiement",
+      "quick_label_list_url": "http://localhost/api/v4/document_types/3/quick_labels/",
+      "trash_time_period": null,
+      "trash_time_unit": null,
+      "url": "http://localhost/api/v4/document_types/3/"
+    },
+    "file_latest": {
+      "checksum": "5af98b9077c5a74d10a8012d0b57f73a310b1327250f16505e4516ee28bc0019",
+      "comment": "",
+      "document_id": 5,
+      "document_url": "http://localhost/api/v4/documents/5/",
+      "encoding": "us-ascii",
+      "file": "b1641648-f1b9-45be-970d-b0e7e99afc18",
+      "filename": "file.svg",
+      "id": 5,
+      "mimetype": "image/svg+xml",
+      "page_list_url": "http://localhost/api/v4/documents/5/files/5/pages/",
+      "pages_first": null,
+      "size": 54722,
+      "timestamp": "2025-07-30T15:00:25.368998+03:00",
+      "url": "http://localhost/api/v4/documents/5/files/5/"
+    },
+    "file_list_url": "http://localhost/api/v4/documents/5/files/",
+    "id": 5,
+    "label": "file.svg",
+    "language": "fra",
+    "url": "http://localhost/api/v4/documents/5/",
+    "uuid": "0d8bdf44-95d8-4200-a256-13b4ab07682d",
+    "version_active": {
+      "active": true,
+      "comment": "",
+      "document_id": 5,
+      "document_url": "http://localhost/api/v4/documents/5/",
+      "export_url": "http://localhost/api/v4/documents/5/versions/4/export/",
+      "id": 4,
+      "page_list_url": "http://localhost/api/v4/documents/5/versions/4/pages/",
+      "pages_first": null,
+      "timestamp": "2025-07-30T15:00:25.634561+03:00",
+      "url": "http://localhost/api/v4/documents/5/versions/4/"
+    },
+    "version_list_url": "http://localhost/api/v4/documents/5/versions/"
+  },
+  "id": 37,
+  "metadata_type": {
+    "default": "",
+    "id": 11,
+    "label": "Date",
+    "lookup": "",
+    "name": "Date",
+    "parser": "mayan.apps.metadata.metadata_parsers.DateParser",
+    "parser_arguments": "",
+    "url": "http://localhost/api/v4/metadata_types/11/",
+    "validation": "mayan.apps.metadata.metadata_validators.DateValidator",
+    "validation_arguments": ""
+  },
+  "url": "http://localhost/api/v4/documents/5/metadata/37/",
+  "value": "2028-01-01"
+}
+
+
+---------------------------------------------------------------------------
+
+{
+  "document": {
+    "datetime_created": "2025-07-30T15:00:25.218201+03:00",
+    "description": "",
+    "document_change_type_url": "http://localhost/api/v4/documents/5/type/change/",
+    "document_type": {
+      "delete_time_period": 30,
+      "delete_time_unit": "days",
+      "document_stub_expiration_interval": 86400,
+      "document_stub_pruning_enabled": true,
+      "documents_url": "http://localhost/api/v4/document_types/3/documents/",
+      "filename_generator_backend": "uuid",
+      "filename_generator_backend_arguments": "",
+      "id": 3,
+      "label": "Paiement",
+      "quick_label_list_url": "http://localhost/api/v4/document_types/3/quick_labels/",
+      "trash_time_period": null,
+      "trash_time_unit": null,
+      "url": "http://localhost/api/v4/document_types/3/"
+    },
+    "file_latest": {
+      "checksum": "5af98b9077c5a74d10a8012d0b57f73a310b1327250f16505e4516ee28bc0019",
+      "comment": "",
+      "document_id": 5,
+      "document_url": "http://localhost/api/v4/documents/5/",
+      "encoding": "us-ascii",
+      "file": "b1641648-f1b9-45be-970d-b0e7e99afc18",
+      "filename": "file.svg",
+      "id": 5,
+      "mimetype": "image/svg+xml",
+      "page_list_url": "http://localhost/api/v4/documents/5/files/5/pages/",
+      "pages_first": null,
+      "size": 54722,
+      "timestamp": "2025-07-30T15:00:25.368998+03:00",
+      "url": "http://localhost/api/v4/documents/5/files/5/"
+    },
+    "file_list_url": "http://localhost/api/v4/documents/5/files/",
+    "id": 5,
+    "label": "file.svg",
+    "language": "fra",
+    "url": "http://localhost/api/v4/documents/5/",
+    "uuid": "0d8bdf44-95d8-4200-a256-13b4ab07682d",
+    "version_active": {
+      "active": true,
+      "comment": "",
+      "document_id": 5,
+      "document_url": "http://localhost/api/v4/documents/5/",
+      "export_url": "http://localhost/api/v4/documents/5/versions/4/export/",
+      "id": 4,
+      "page_list_url": "http://localhost/api/v4/documents/5/versions/4/pages/",
+      "pages_first": null,
+      "timestamp": "2025-07-30T15:00:25.634561+03:00",
+      "url": "http://localhost/api/v4/documents/5/versions/4/"
+    },
+    "version_list_url": "http://localhost/api/v4/documents/5/versions/"
+  },
+  "id": 38,
+  "metadata_type": {
+    "default": "",
+    "id": 13,
+    "label": "Mode",
+    "lookup": "",
+    "name": "Mode",
+    "parser": "",
+    "parser_arguments": "",
+    "url": "http://localhost/api/v4/metadata_types/13/",
+    "validation": "",
+    "validation_arguments": ""
+  },
+  "url": "http://localhost/api/v4/documents/5/metadata/38/",
+  "value": "cash"
+}
+
+
