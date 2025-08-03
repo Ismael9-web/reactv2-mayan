@@ -14,8 +14,6 @@ const app = express();
 const port = 5000;
 dotenv.config();
 
-
-
 // Route to provide sidebar menu structure for the frontend
 app.get('/api/sidebar_menu', async (req, res) => {
     // Example: You can fetch this dynamically from Mayan or your own logic
@@ -107,6 +105,8 @@ const upload = multer({
   },
 });
 
+
+
 // S3 Routes
 // --- MAYAN EDMS DOCUMENT UPLOAD & METADATA ENDPOINTS (AXIOS-BASED) ---
 // Upload a document to Mayan EDMS (document_type: paiement)
@@ -115,8 +115,16 @@ app.post('/api/mayan/documents', upload.single('file'), async (req, res) => {
     console.log('--- /api/mayan/documents called ---');
     console.log('Request headers:', req.headers);
     console.log('Request cookies:', req.cookies);
-    console.log('Request body:', req.body);
-    console.log('Received file:', req.file);
+    console.log('Raw Content-Type:', req.headers['content-type']);
+    // Check if request is multipart/form-data
+    if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
+      console.log('Content-Type is multipart/form-data');
+    } else {
+      console.log('Content-Type is NOT multipart/form-data');
+    }
+    // Log req.body and req.file before multer processes
+    console.log('Request body (pre-multer):', req.body);
+    console.log('Received file (pre-multer):', req.file);
     if (!req.file) {
       console.log('No file provided in request.');
       return res.status(400).json({ error: 'No file provided' });
@@ -154,7 +162,6 @@ app.post('/api/mayan/documents', upload.single('file'), async (req, res) => {
       headers: {
         ...form.getHeaders(),
         'accept': 'application/json',
-        'Content-Type': 'application/json',
         'X-CSRFTOKEN': csrftoken,
         'Cookie': `sessionid=${sessionid}; csrftoken=${csrftoken}`,
         'Referer': 'http://localhost:5173',
@@ -188,23 +195,80 @@ app.post('/api/mayan/documents', upload.single('file'), async (req, res) => {
 });
 
 // Add metadata to a document (using axios)
-app.post('/api/mayan/documents/:id/metadata', async (req, res) => {
+// Add document to cabinet (cabinet_id=4)
+app.post('/api/mayan/documents/:id/add-to-cabinet', async (req, res) => {
   try {
     const token = await getAuthToken();
     const { id } = req.params;
-    const { metadata_type_id, value } = req.body;
+    const sessionid = req.cookies.sessionid;
+    const csrftoken = req.cookies.csrftoken;
+    const cabinetId = 4; // Hardcoded as per user request
     const result = await axios.post(
-      `http://localhost/api/v4/documents/${id}/metadata/`,
-      { metadata_type_id, value },
+      `http://localhost/api/v4/cabinets/${cabinetId}/documents/`,
+      { document: id },
       {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
+          'X-CSRFTOKEN': csrftoken,
+          'Cookie': `sessionid=${sessionid}; csrftoken=${csrftoken}`,
           'Referer': 'http://localhost:5173',
+          'Accept': 'application/json',
         },
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity,
+        withCredentials: true,
       }
     );
     res.json({ success: true, data: result.data });
+  } catch (error) {
+    console.error('Mayan add document to cabinet error:', error);
+    res.status(500).json({ error: 'Failed to add document to cabinet' });
+  }
+});
+app.post('/api/mayan/documents/:id/metadata', async (req, res) => {
+  try {
+    const token = await getAuthToken();
+    const { id } = req.params;
+    const { metadata_type_id, metadata_type, value, statut, description, documentId } = req.body;
+    const sessionid = req.cookies.sessionid;
+    const csrftoken = req.cookies.csrftoken;
+    // Build metadata payloads
+    const payloads: any[] = [];
+    if (metadata_type_id && metadata_type && value !== undefined) {
+      payloads.push({ metadata_type_id, metadata_type, value });
+    }
+    if (statut) {
+      payloads.push({ metadata_type_id: 17, metadata_type: { name: 'Statut', label: 'Statut' }, value: statut });
+    }
+    if (description) {
+      payloads.push({ metadata_type_id: 16, metadata_type: { name: 'Description', label: 'Description' }, value: description });
+    }
+    if (documentId) {
+      payloads.push({ metadata_type_id: 18, metadata_type: { name: 'Document_ID', label: 'Document_ID' }, value: documentId });
+    }
+    const results: any[] = [];
+    for (const payload of payloads) {
+      const result = await axios.post(
+        `http://localhost/api/v4/documents/${id}/metadata/`,
+        payload,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'X-CSRFTOKEN': csrftoken,
+            'Cookie': `sessionid=${sessionid}; csrftoken=${csrftoken}`,
+            'Referer': 'http://localhost:5173',
+            'Accept': 'application/json',
+          },
+          maxContentLength: Infinity,
+          maxBodyLength: Infinity,
+          withCredentials: true,
+        }
+      );
+      results.push(result.data);
+    }
+    res.json({ success: true, data: results });
   } catch (error) {
     console.error('Mayan add metadata error:', error);
     res.status(500).json({ error: 'Failed to add metadata' });
@@ -277,45 +341,6 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
   }
 });
 
-app.get('/api/files', async (req, res) => {
-  try {
-    const prefix = req.query.prefix as string;
-    const files = await s3Service.listFiles(prefix);
-    res.json({ success: true, data: files });
-  } catch (error) {
-    console.error('List files error:', error);
-    res.status(500).json({ error: 'Failed to list files' });
-  }
-});
-
-app.get('/api/download/:key(*)', async (req, res) => {
-  try {
-    const key = req.params.key;
-    const fileBuffer = await s3Service.downloadFile(key);
-    
-    res.set({
-      'Content-Type': 'application/octet-stream',
-      'Content-Disposition': `attachment; filename="${key.split('/').pop()}"`,
-    });
-    
-    res.send(fileBuffer);
-  } catch (error) {
-    console.error('Download error:', error);
-    res.status(500).json({ error: 'Download failed' });
-  }
-});
-
-app.delete('/api/files/:key(*)', async (req, res) => {
-  try {
-    const key = req.params.key;
-    await s3Service.deleteFile(key);
-    res.json({ success: true, message: 'File deleted successfully' });
-  } catch (error) {
-    console.error('Delete error:', error);
-    res.status(500).json({ error: 'Delete failed' });
-  }
-});
-
 
 
 // Add this near the top of server.ts
@@ -353,6 +378,7 @@ app.post('/api/payment-vouchers', upload.single('file'), async (req, res) => {
   }
 });
 
+
 // Route to fetch approved documents and their formatted metadata 
 app.get('/api/approved_documents_metadata', async (req, res) => {
     try {
@@ -378,7 +404,56 @@ app.get('/api/approved_documents_metadata', async (req, res) => {
             withCredentials: true
         });
         const docIds = (docsResponse.data.results || []).map((doc: any) => doc.id);
-        // For each document, fetch and format its metadata
+
+        // Fetch documents from document_type 3 with retry logic and get their Document_ID metadata
+        async function fetchDataWithRetry(url: string, headers: any, retries = 3, delay = 1000): Promise<any> {
+            try {
+                const response = await axios.get(url, { headers });
+                return response.data;
+            } catch (error) {
+                if (retries > 0) {
+                    console.warn(`Retrying ${url} in ${delay / 1000}s... (${retries} retries left)`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return fetchDataWithRetry(url, headers, retries - 1, delay * 2);
+                }
+                throw error;
+            }
+        }
+
+        // First, get all type 2 documents (these are the person documents we'll reference)
+        const type2Res = await fetchDataWithRetry(
+            'http://localhost/api/v4/document_types/2/documents/',
+            {
+                'Authorization': `Bearer ${token}`,
+                'Cookie': `sessionid=${sessionid}; csrftoken=${csrftoken}`,
+                'X-CSRFTOKEN': csrftoken,
+                'Referer': 'http://localhost:5173',
+            }
+        );
+        
+        // Store the IDs from type 2 documents (person documents) for reference
+        const type2Docs = type2Res.results || [];
+        const personDocIds = new Set<string>();
+        
+        // Add each person document ID to our reference set
+        type2Docs.forEach((doc: any) => {
+            const docId = String(doc.id).trim();
+            personDocIds.add(docId);
+            console.log(`Adding person document ID to reference set: ${docId}`);
+        });
+        
+        console.log('Person documents (type 2):', Array.from(personDocIds));
+        
+        // Then get type 3 documents (these are the payment documents we'll check)
+        const type3Res = await fetchDataWithRetry(
+            'http://localhost/api/v4/document_types/3/documents/',
+            {
+                'Authorization': `Bearer ${token}`,
+                'Cookie': `sessionid=${sessionid}; csrftoken=${csrftoken}`,
+                'X-CSRFTOKEN': csrftoken,
+                'Referer': 'http://localhost:5173',
+            }
+        );        // For each document, fetch and format its metadata
         const results = await Promise.all(
             docIds.map(async (id: number) => {
                 try {
@@ -396,11 +471,110 @@ app.get('/api/approved_documents_metadata', async (req, res) => {
                     );
                     // Build a metadata object: { label1: value1, label2: value2, ... }
                     const metaObj: Record<string, string> = {};
+                    let documentIdMetaValue: string | undefined;
+                    let dateValue: string | undefined;
+                    
+                    console.log(`Processing metadata for document ${id}:`, metaResponse.data.results);
+                    
                     (metaResponse.data.results || []).forEach((meta: any) => {
                         if (meta.metadata_type?.label) {
-                            metaObj[meta.metadata_type.label] = meta.value;
+                            // Store original label for object keys
+                            const originalLabel = meta.metadata_type.label;
+                            
+                            // Normalize the label to handle case and special characters
+                            const normalizedLabel = originalLabel
+                                .normalize('NFD')
+                                .replace(/[\u0300-\u036f]/g, '')
+                                .replace(/[-_ ]/g, '')
+                                .toUpperCase();
+
+                            // Store metadata value with original label
+                            metaObj[originalLabel] = meta.value;
+                            
+                            console.log(`Processing metadata field: ${originalLabel} (normalized: ${normalizedLabel}), value: ${meta.value}`);
+                            
+                            // Check for Document_ID variations and metadata type ID
+                            if (meta.metadata_type.id === 18) { // Check by metadata type ID first
+                                documentIdMetaValue = meta.value;
+                                console.log(`Found Document_ID metadata by type_id: ${meta.value} for document ${id}`);
+                            } else if (normalizedLabel === 'DOCUMENTID' || 
+                                     normalizedLabel === 'DOCUMENT_ID' || 
+                                     normalizedLabel === 'ID') {
+                                documentIdMetaValue = meta.value;
+                                console.log(`Found Document_ID metadata by label: ${meta.value} for document ${id}`);
+                            }
+                            
+                            // Log all metadata types for debugging
+                            console.log(`Metadata field info:`, {
+                                id: meta.metadata_type.id,
+                                label: meta.metadata_type.label,
+                                value: meta.value,
+                                normalized: normalizedLabel
+                            });
+                            
+                            // Check for Date variations and metadata type ID
+                            if (normalizedLabel === 'DATEINITIAL' || 
+                                normalizedLabel === 'DATE-INITIAL' ||
+                                normalizedLabel.includes('DATEINITIAL') ||
+                                meta.metadata_type.name === 'Date-initial') {
+                                dateValue = meta.value;
+                                console.log(`Found Date metadata: ${meta.value} for document ${id}`);
+                            }
                         }
                     });
+                    // Cross-reference: if this document's Document_ID exists in type3DocIds and date is current month, set status/canEdit
+                    let statut = 'pending';
+                    let canEdit = false;
+                    
+                    // First check if the document exists in type3DocIds (paid documents)
+                    const docIdToCheck = documentIdMetaValue ? String(documentIdMetaValue).trim() : undefined;
+                    console.log(`Checking document ${id} - Document_ID: ${docIdToCheck}`);
+                    console.log(`Available person document IDs:`, Array.from(personDocIds));
+                    
+                    // Convert docIdToCheck to string and ensure it's properly formatted
+                    const formattedDocId = docIdToCheck ? String(docIdToCheck).trim() : undefined;
+                    console.log(`\nProcessing payment document ${id}:`);
+                    console.log(`- Document_ID from metadata: ${formattedDocId}`);
+                    console.log(`- Date value: ${dateValue}`);
+                    console.log(`- Person documents list:`, Array.from(personDocIds));
+
+                    // Get current month and year for comparison
+                    const currentDate = new Date();
+                    let isCurrentMonthAndYear = false;
+                    if (dateValue) {
+                        const docDate = new Date(dateValue);
+                        isCurrentMonthAndYear = (
+                            docDate.getMonth() === currentDate.getMonth() && 
+                            docDate.getFullYear() === currentDate.getFullYear()
+                        );
+                    }
+
+                    if (formattedDocId && personDocIds.has(formattedDocId) && isCurrentMonthAndYear) {
+                        // If Document_ID matches a person document and it's current month, mark as paid
+                        statut = 'payé';
+                        canEdit = true; // Allow editing for paid documents
+                        console.log(`✓ Payment document ${id} references person document ${formattedDocId} and is in current month - marked as paid`);
+                    } else {
+                        if (formattedDocId && personDocIds.has(formattedDocId)) {
+                            console.log(`✗ Payment document ${id} references person document ${formattedDocId} but is not in current month`);
+                            statut = 'expired'; // Not in current month
+                            canEdit = false;
+                        } else {
+                            console.log(`✗ Payment document ${id} does not reference a valid person document`);
+                            if (isCurrentMonthAndYear) {
+                                statut = 'pending'; // In current month but no valid reference
+                                canEdit = false;
+                                console.log(`→ Document is in current month, marked as pending`);
+                            } else {
+                                statut = 'expired'; // Not in current month
+                                canEdit = false;
+                                console.log(`→ Document is not in current month, marked as expired`);
+                            }
+                        }
+                    }
+                    metaObj['Statut'] = statut;
+                    metaObj['canEdit'] = canEdit ? 'true' : 'false';
+                    console.log(`Final status for document ${id}:`, { Statut: metaObj['Statut'], canEdit: metaObj['canEdit'] });
                     return {
                         id,
                         metadata: metaObj,
@@ -429,6 +603,32 @@ app.get('/api/approved_documents_metadata', async (req, res) => {
         console.error('Error fetching approved documents metadata:', error.message || error);
         res.status(500).json({ error: error.message || 'Failed to fetch approved documents metadata' });
     }
+});
+
+app.get('/api/document_types/3/documents', async (req, res) => {
+  try {
+    const token = await getAuthToken();
+    const sessionid = req.cookies.sessionid;
+    const csrftoken = req.cookies.csrftoken;
+    const result = await axios.get(
+      'http://localhost/api/v4/document_types/3/documents/',
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Cookie': `sessionid=${sessionid}; csrftoken=${csrftoken}`,
+          'X-CSRFTOKEN': csrftoken,
+          'Referer': 'http://localhost:5173',
+        },
+        withCredentials: true,
+      }
+    );
+    // Return array of document IDs
+    const docIds = (result.data.results || []).map((doc: any) => doc.id);
+    res.json({ success: true, docIds });
+  } catch (error) {
+    console.error('Error fetching document_type=3 documents:', error);
+    res.status(500).json({ error: 'Failed to fetch document_type=3 documents' });
+  }
 });
 
 // (Removed unreachable and duplicate code block causing errors)
@@ -509,15 +709,22 @@ app.get('/api/documents', async (req, res) => {
     }
 });
 
+// Configure the server
+const server = {
+    app,
+    start: () => {
+        app.listen(port, () => {
+            console.log(`Server running at http://localhost:${port}`);
+        });
+    }
+};
+
 // Start the server
-app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
-});
-export default app;
-// To run this server, use the command: npx ts-node server.ts
-// Ensure you have ts-node installed globally or in your project dependencies.
-// You can also add a script in package.json to start the server easily:
-// "scripts": {
-//   "start": "ts-node server.ts"
-// }
-// This will allow you to run the server with `npm start` or `yarn start`.
+server.start();
+
+// Export the app for testing/importing
+export default server.app;
+
+// To run this server, use the command:
+// npx ts-node server.ts
+

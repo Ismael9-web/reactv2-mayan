@@ -21,7 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 
 export default function LoginForm(props: LoginFormProps) {
-  const { className, onLoginSuccess, ...rest } = props;
+  const { className, ...rest } = props;
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -40,11 +40,7 @@ export default function LoginForm(props: LoginFormProps) {
         // Set username and authToken cookies for dashboard and auth
         Cookies.set("username", username, { path: "/" });
         Cookies.set("authToken", response.data.token, { path: "/" });
-        if (onLoginSuccess) {
-          onLoginSuccess();
-        } else {
-          navigate("/list-beneficiaires");
-        }
+        navigate("/list-beneficiaires");
       } else {
         setError("Login failed: No token returned");
       }

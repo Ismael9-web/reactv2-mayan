@@ -4,6 +4,7 @@
     "jspdf-autotable": "^5.0.2"
   },
   "devDependencies": {
-    "@openapitools/openapi-generator-cli": "^2.21.4"
+    "@openapitools/openapi-generator-cli": "^2.21.4",
+    "@types/history": "^5.0.0"
   }
 }
