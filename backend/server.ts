@@ -14,33 +14,6 @@ const app = express();
 const port = 5000;
 dotenv.config();
 
-// Route to provide sidebar menu structure for the frontend
-app.get('/api/sidebar_menu', async (req, res) => {
-    // Example: You can fetch this dynamically from Mayan or your own logic
-    // For now, return a static menu structure
-    res.json([
-        {
-            label: 'Dashboard',
-            path: '/dash07',
-            icon: null // You can add icon names or SVGs if you want
-        },
-        {
-            label: 'Documents',
-            path: '/documents',
-            icon: null,
-            children: [
-                { label: 'Approved', path: '/documents/approved', icon: null },
-                { label: 'Pending', path: '/documents/pending', icon: null }
-            ]
-        },
-        {
-            label: 'Settings',
-            path: '/settings',
-            icon: null
-        }
-    ]);
-});
-
 // Middleware
 app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
 app.use(bodyParser.json());
@@ -84,18 +57,9 @@ async function getAuthToken() {
         throw new Error('Failed to fetch auth token');
     }
 }
+
 //check the environment variables
 console.log(process.env);
-// S3 Configuration
-const s3Config = {
-  endpoint: process.env.MINIO_ENDPOINT || 'http://localhost:9000',
-  accessKeyId: process.env.MINIO_ACCESS_KEY || 'minioadmin',
-  secretAccessKey: process.env.MINIO_SECRET_KEY || 'minioadmin123',
-  region: process.env.MINIO_REGION || 'Opposition-tresor',
-  bucket: process.env.MINIO_BUCKET || 'paiement', // Use 'paiement' bucket for R/W access
-};
-
-const s3Service = new S3Service(s3Config);
 
 // Configure multer for file uploads
 const upload = multer({
@@ -104,8 +68,6 @@ const upload = multer({
     fileSize: 10 * 1024 * 1024, // 10MB limit
   },
 });
-
-
 
 // S3 Routes
 // --- MAYAN EDMS DOCUMENT UPLOAD & METADATA ENDPOINTS (AXIOS-BASED) ---
@@ -154,7 +116,7 @@ app.post('/api/mayan/documents', upload.single('file'), async (req, res) => {
     // Log form-data fields before sending to Mayan
     console.log('FormData to send to Mayan:');
     for (const key of Object.keys(form)) {
-      console.log(`  ${key}:`, form[key]);
+      console.log(`  ${key}:`, (form as any)[key]);
     }
 
     // Send to Mayan with correct headers
@@ -226,6 +188,7 @@ app.post('/api/mayan/documents/:id/add-to-cabinet', async (req, res) => {
     res.status(500).json({ error: 'Failed to add document to cabinet' });
   }
 });
+
 app.post('/api/mayan/documents/:id/metadata', async (req, res) => {
   try {
     const token = await getAuthToken();
@@ -299,7 +262,7 @@ app.get('/api/mayan/documents/:id/metadata', async (req, res) => {
     console.error('Mayan get metadata error:', error);
     res.status(500).json({ error: 'Failed to get metadata' });
   }
-});25200
+});
 
 // Delete a metadata entry from a document (using axios)
 app.delete('/api/mayan/documents/:id/metadata/:metadata_id', async (req, res) => {
@@ -321,68 +284,10 @@ app.delete('/api/mayan/documents/:id/metadata/:metadata_id', async (req, res) =>
     res.status(500).json({ error: 'Failed to delete metadata' });
   }
 });
-app.post('/api/upload', upload.single('file'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file provided' });
-    }
-
-    const key = `uploads/${Date.now()}-${req.file.originalname}`;
-    const result = await s3Service.uploadFile(
-      key,
-      req.file.buffer,
-      req.file.mimetype
-    );
-
-    res.json({ success: true, data: result });
-  } catch (error) {
-    console.error('Upload error:', error);
-    res.status(500).json({ error: 'Upload failed' });
-  }
-});
-
-
-
-// Add this near the top of server.ts
-const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT),
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-});
-
-// Payment voucher submission route
-app.post('/api/payment-vouchers', upload.single('file'), async (req, res) => {
-  try {
-    const { payee, amount, description, date } = req.body;
-    let filePath: string | null = null;
-
-    if (req.file) {
-      // Save file to S3/MinIO
-      const key = `vouchers/${Date.now()}-${req.file.originalname}`;
-      await s3Service.uploadFile(key, req.file.buffer, req.file.mimetype);
-      filePath = key;
-    }
-
-    const result = await pool.query(
-      `INSERT INTO payment_vouchers (payee, amount, description, date, file_path)
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [payee, amount, description, date, filePath]
-    );
-
-    res.json({ success: true, data: result.rows[0] });
-  } catch (error) {
-    console.error('Payment voucher submission error:', error);
-    res.status(500).json({ error: 'Failed to submit payment voucher' });
-  }
-});
-
 
 // Route to fetch approved documents and their formatted metadata 
 app.get('/api/approved_documents_metadata', async (req, res) => {
     try {
-        // 1 = workflow_template_id, 3 = workflow_template_state_id (approved)
         const sessionid = req.cookies.sessionid;
         const csrftoken = req.cookies.csrftoken;
         const authToken = req.cookies.authToken;
@@ -393,215 +298,168 @@ app.get('/api/approved_documents_metadata', async (req, res) => {
         if (!token) {
             return res.status(500).json({ error: 'Failed to fetch auth token' });
         }
-        // Fetch all approved documents for the workflow
-        const docsResponse = await axios.get('http://localhost/api/v4/workflow_templates/1/states/3/documents/', {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Cookie': `sessionid=${sessionid}; csrftoken=${csrftoken}`,
-                'X-CSRFTOKEN': csrftoken,
-                'Referer': 'http://localhost:5173',
-            },
+        // Helper function to create headers for API requests
+        const createHeaders = () => ({
+            'Authorization': `Bearer ${token}`,
+            'Cookie': `sessionid=${sessionid}; csrftoken=${csrftoken}`,
+            'X-CSRFTOKEN': csrftoken,
+            'Referer': 'http://localhost:5173',
+        });
+
+        // Fetch all person documents (type 2)
+        const personDocsResponse = await axios.get('http://localhost/api/v4/document_types/2/documents/', {
+            headers: createHeaders(),
             withCredentials: true
         });
-        const docIds = (docsResponse.data.results || []).map((doc: any) => doc.id);
+        const personDocs = personDocsResponse.data.results || [];
 
-        // Fetch documents from document_type 3 with retry logic and get their Document_ID metadata
-        async function fetchDataWithRetry(url: string, headers: any, retries = 3, delay = 1000): Promise<any> {
-            try {
-                const response = await axios.get(url, { headers });
-                return response.data;
-            } catch (error) {
-                if (retries > 0) {
-                    console.warn(`Retrying ${url} in ${delay / 1000}s... (${retries} retries left)`);
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    return fetchDataWithRetry(url, headers, retries - 1, delay * 2);
-                }
-                throw error;
-            }
-        }
-
-        // First, get all type 2 documents (these are the person documents we'll reference)
-        const type2Res = await fetchDataWithRetry(
-            'http://localhost/api/v4/document_types/2/documents/',
-            {
-                'Authorization': `Bearer ${token}`,
-                'Cookie': `sessionid=${sessionid}; csrftoken=${csrftoken}`,
-                'X-CSRFTOKEN': csrftoken,
-                'Referer': 'http://localhost:5173',
-            }
-        );
-        
-        // Store the IDs from type 2 documents (person documents) for reference
-        const type2Docs = type2Res.results || [];
-        const personDocIds = new Set<string>();
-        
-        // Add each person document ID to our reference set
-        type2Docs.forEach((doc: any) => {
-            const docId = String(doc.id).trim();
-            personDocIds.add(docId);
-            console.log(`Adding person document ID to reference set: ${docId}`);
+        // Fetch all payment documents (type 3)
+        const paymentDocsResponse = await axios.get('http://localhost/api/v4/document_types/3/documents/', {
+            headers: createHeaders(),
+            withCredentials: true
         });
-        
-        console.log('Person documents (type 2):', Array.from(personDocIds));
-        
-        // Then get type 3 documents (these are the payment documents we'll check)
-        const type3Res = await fetchDataWithRetry(
-            'http://localhost/api/v4/document_types/3/documents/',
-            {
-                'Authorization': `Bearer ${token}`,
-                'Cookie': `sessionid=${sessionid}; csrftoken=${csrftoken}`,
-                'X-CSRFTOKEN': csrftoken,
-                'Referer': 'http://localhost:5173',
+        const paymentDocs = paymentDocsResponse.data.results || [];
+
+        // Create a map to store payment information keyed by Document_ID
+        const confirmedPaymentsMap = new Map();
+
+        // Fetch metadata for all payment documents and build the payments map
+        await Promise.all(paymentDocs.map(async (paymentDoc: any) => {
+            try {
+                const paymentMetaResponse = await axios.get(
+                    `http://localhost/api/v4/documents/${paymentDoc.id}/metadata/`,
+                    {
+                        headers: createHeaders(),
+                        withCredentials: true
+                    }
+                );
+
+                let docIdFromPaymentMetadata: string | null = null;
+                let dateFromPaymentMetadata: string | null = null;
+
+                (paymentMetaResponse.data.results || []).forEach((meta: any) => {
+                    if (meta.metadata_type?.label === 'Document_ID') {
+                        docIdFromPaymentMetadata = String(meta.value);
+                    }
+                    if (meta.metadata_type?.label === 'Date') {
+                        dateFromPaymentMetadata = meta.value;
+                    }
+                });
+
+                if (docIdFromPaymentMetadata && dateFromPaymentMetadata) {
+                    confirmedPaymentsMap.set(docIdFromPaymentMetadata, {
+                        date: dateFromPaymentMetadata,
+                        paymentDocId: paymentDoc.id
+                    });
+                }
+            } catch (error) {
+                console.error(`Error fetching metadata for payment document ${paymentDoc.id}:`, error);
             }
-        );        // For each document, fetch and format its metadata
-        const results = await Promise.all(
-            docIds.map(async (id: number) => {
+        }));
+
+        // Process each person document to extract its metadata and determine payment status
+        const processedDocs = await Promise.all(
+            personDocs.map(async (doc: any) => {
                 try {
                     const metaResponse = await axios.get(
-                        `http://localhost/api/v4/documents/${id}/metadata/`,
+                        `http://localhost/api/v4/documents/${doc.id}/metadata/`,
                         {
-                            headers: {
-                                'Authorization': `Bearer ${token}`,
-                                'Cookie': `sessionid=${sessionid}; csrftoken=${csrftoken}`,
-                                'X-CSRFTOKEN': csrftoken,
-                                'Referer': 'http://localhost:5173',
-                            },
+                            headers: createHeaders(),
                             withCredentials: true
                         }
                     );
-                    // Build a metadata object: { label1: value1, label2: value2, ... }
+
                     const metaObj: Record<string, string> = {};
-                    let documentIdMetaValue: string | undefined;
                     let dateValue: string | undefined;
-                    
-                    console.log(`Processing metadata for document ${id}:`, metaResponse.data.results);
-                    
+
                     (metaResponse.data.results || []).forEach((meta: any) => {
                         if (meta.metadata_type?.label) {
-                            // Store original label for object keys
                             const originalLabel = meta.metadata_type.label;
-                            
-                            // Normalize the label to handle case and special characters
+                            metaObj[originalLabel] = meta.value;
+
+                            // Check for Date metadata
                             const normalizedLabel = originalLabel
                                 .normalize('NFD')
                                 .replace(/[\u0300-\u036f]/g, '')
                                 .replace(/[-_ ]/g, '')
                                 .toUpperCase();
 
-                            // Store metadata value with original label
-                            metaObj[originalLabel] = meta.value;
-                            
-                            console.log(`Processing metadata field: ${originalLabel} (normalized: ${normalizedLabel}), value: ${meta.value}`);
-                            
-                            // Check for Document_ID variations and metadata type ID
-                            if (meta.metadata_type.id === 18) { // Check by metadata type ID first
-                                documentIdMetaValue = meta.value;
-                                console.log(`Found Document_ID metadata by type_id: ${meta.value} for document ${id}`);
-                            } else if (normalizedLabel === 'DOCUMENTID' || 
-                                     normalizedLabel === 'DOCUMENT_ID' || 
-                                     normalizedLabel === 'ID') {
-                                documentIdMetaValue = meta.value;
-                                console.log(`Found Document_ID metadata by label: ${meta.value} for document ${id}`);
-                            }
-                            
-                            // Log all metadata types for debugging
-                            console.log(`Metadata field info:`, {
-                                id: meta.metadata_type.id,
-                                label: meta.metadata_type.label,
-                                value: meta.value,
-                                normalized: normalizedLabel
-                            });
-                            
-                            // Check for Date variations and metadata type ID
                             if (normalizedLabel === 'DATEINITIAL' || 
                                 normalizedLabel === 'DATE-INITIAL' ||
                                 normalizedLabel.includes('DATEINITIAL') ||
                                 meta.metadata_type.name === 'Date-initial') {
                                 dateValue = meta.value;
-                                console.log(`Found Date metadata: ${meta.value} for document ${id}`);
                             }
                         }
                     });
-                    // Cross-reference: if this document's Document_ID exists in type3DocIds and date is current month, set status/canEdit
-                    let statut = 'pending';
-                    let canEdit = false;
-                    
-                    // First check if the document exists in type3DocIds (paid documents)
-                    const docIdToCheck = documentIdMetaValue ? String(documentIdMetaValue).trim() : undefined;
-                    console.log(`Checking document ${id} - Document_ID: ${docIdToCheck}`);
-                    console.log(`Available person document IDs:`, Array.from(personDocIds));
-                    
-                    // Convert docIdToCheck to string and ensure it's properly formatted
-                    const formattedDocId = docIdToCheck ? String(docIdToCheck).trim() : undefined;
-                    console.log(`\nProcessing payment document ${id}:`);
-                    console.log(`- Document_ID from metadata: ${formattedDocId}`);
-                    console.log(`- Date value: ${dateValue}`);
-                    console.log(`- Person documents list:`, Array.from(personDocIds));
 
-                    // Get current month and year for comparison
+                    // Check payment status
                     const currentDate = new Date();
-                    let isCurrentMonthAndYear = false;
-                    if (dateValue) {
-                        const docDate = new Date(dateValue);
-                        isCurrentMonthAndYear = (
-                            docDate.getMonth() === currentDate.getMonth() && 
-                            docDate.getFullYear() === currentDate.getFullYear()
-                        );
-                    }
+                    const currentMonth = currentDate.getMonth();
+                    const currentYear = currentDate.getFullYear();
+                    const paymentInfo = confirmedPaymentsMap.get(String(doc.id));
+                    
+                    let paymentStatus = 'pending';
+                    let canEdit = true;
 
-                    if (formattedDocId && personDocIds.has(formattedDocId) && isCurrentMonthAndYear) {
-                        // If Document_ID matches a person document and it's current month, mark as paid
-                        statut = 'payé';
-                        canEdit = true; // Allow editing for paid documents
-                        console.log(`✓ Payment document ${id} references person document ${formattedDocId} and is in current month - marked as paid`);
-                    } else {
-                        if (formattedDocId && personDocIds.has(formattedDocId)) {
-                            console.log(`✗ Payment document ${id} references person document ${formattedDocId} but is not in current month`);
-                            statut = 'expired'; // Not in current month
+                    if (paymentInfo) {
+                        const paymentDate = new Date(paymentInfo.date);
+                        if (paymentDate.getMonth() === currentMonth && 
+                            paymentDate.getFullYear() === currentYear) {
+                            paymentStatus = 'payé';
                             canEdit = false;
-                        } else {
-                            console.log(`✗ Payment document ${id} does not reference a valid person document`);
-                            if (isCurrentMonthAndYear) {
-                                statut = 'pending'; // In current month but no valid reference
-                                canEdit = false;
-                                console.log(`→ Document is in current month, marked as pending`);
-                            } else {
-                                statut = 'expired'; // Not in current month
-                                canEdit = false;
-                                console.log(`→ Document is not in current month, marked as expired`);
-                            }
                         }
                     }
-                    metaObj['Statut'] = statut;
-                    metaObj['canEdit'] = canEdit ? 'true' : 'false';
-                    console.log(`Final status for document ${id}:`, { Statut: metaObj['Statut'], canEdit: metaObj['canEdit'] });
+
                     return {
-                        id,
+                        id: doc.id,
                         metadata: metaObj,
+                        dateValue,
+                        paymentStatus,
+                        canEdit,
+                        paymentDocId: paymentInfo?.paymentDocId
                     };
-                } catch (err: any) {
-                    console.error(`Error fetching metadata for document ID ${id}:`, err.message || err);
+                } catch (error) {
+                    console.error(`Error fetching metadata for document ${doc.id}:`, error);
                     return {
-                        id,
+                        id: doc.id,
                         metadata: {},
+                        dateValue: undefined,
+                        paymentStatus: 'pending',
+                        canEdit: true
                     };
                 }
             })
         );
+
         // Collect all unique metadata labels for columns
-        const allLabels = Array.from(new Set(results.flatMap(doc => Object.keys(doc.metadata))));
-        // Build rows for the frontend: each row is { id, ...metadata fields }
-        const rows = results.map(doc => {
-            const row: Record<string, string> = { id: String(doc.id) };
+        const allLabels = Array.from(new Set(processedDocs.flatMap(doc => Object.keys(doc.metadata))));
+
+        // Build rows for the frontend
+        const rows = processedDocs.map(doc => {
+            const row: Record<string, any> = {
+                id: String(doc.id),
+                Statut: doc.paymentStatus,
+                canEdit: doc.canEdit,
+                paymentDocId: doc.paymentDocId || null
+            };
             allLabels.forEach(label => {
-                row[label] = doc.metadata[label] || '';
+                row[label] = (doc.metadata as Record<string, string>)[label] || '';
             });
             return row;
         });
-        res.json({ columns: ['id', ...allLabels], rows });
-    } catch (error: any) {
-        console.error('Error fetching approved documents metadata:', error.message || error);
-        res.status(500).json({ error: error.message || 'Failed to fetch approved documents metadata' });
+
+        res.json({ 
+            columns: ['id', 'Statut', ...allLabels], 
+            rows,
+            metadata: {
+                canEdit: rows.map(row => row.canEdit),
+                paymentDocIds: rows.map(row => row.paymentDocId)
+            }
+        });
+    } catch (error) {
+        console.error('Error processing documents:', error);
+        res.status(500).json({ error: 'Failed to process documents' });
     }
 });
 
@@ -631,8 +489,20 @@ app.get('/api/document_types/3/documents', async (req, res) => {
   }
 });
 
-// (Removed unreachable and duplicate code block causing errors)
-//give me the script to start this node server
+
+app.post('/api/logout', async (req, res) => {
+    try {
+        // Clear all cookies
+        res.clearCookie('authToken', { path: '/' });
+        res.clearCookie('sessionid', { path: '/' });
+        res.clearCookie('csrftoken', { path: '/' });
+        res.clearCookie('username', { path: '/' });
+        res.json({ success: true, message: 'Logged out successfully' });
+    } catch (error) {
+        console.error('Logout error:', error);
+        res.status(500).json({ error: 'Failed to logout' });
+    }
+});
 
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
@@ -688,27 +558,6 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-app.get('/api/documents', async (req, res) => {
-    try {
-        console.log('Fetching documents from Mayan API using generated client..');
-        const token = await getAuthToken();
-        if (!token) {
-            return res.status(500).json({ error: 'Failed to fetch auth token' });
-        }
-        const documentsApi = new DocumentsApi(
-            new runtime.Configuration({
-                basePath: 'http://localhost/api/v4',
-                accessToken: token,
-            })
-        );
-        const docsResponse = await documentsApi.documentsList({ pageSize: 100 });
-        res.json(docsResponse.results || []);
-    } catch (error: any) {
-        console.error('Error fetching documents:', error.message || error);
-        res.status(500).json({ error: error.message || 'Failed to fetch documents' });
-    }
-});
-
 // Configure the server
 const server = {
     app,
@@ -724,7 +573,3 @@ server.start();
 
 // Export the app for testing/importing
 export default server.app;
-
-// To run this server, use the command:
-// npx ts-node server.ts
-

@@ -7,10 +7,9 @@ type LoginFormProps = {
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Cookies from "js-cookie";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import axios from "axios";
+import { login } from "../../../../services/api";
 import {
   Card,
   CardContent,
@@ -31,26 +30,22 @@ export default function LoginForm(props: LoginFormProps) {
     e.preventDefault();
     setError("");
     try {
-      const response = await axios.post(
-        "http://localhost:5000/api/login",
-        { username, password },
-        { withCredentials: true }
-      );
-      if (response.data.token) {
-        // Set username and authToken cookies for dashboard and auth
-        Cookies.set("username", username, { path: "/" });
-        Cookies.set("authToken", response.data.token, { path: "/" });
-        navigate("/list-beneficiaires");
+      await login(username, password);
+      if (props.onLoginSuccess) {
+        props.onLoginSuccess();
       } else {
-        setError("Login failed: No token returned");
+        navigate("/list-beneficiaires");
       }
     } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-        setError(
-          err.response?.data?.error || "Login failed. Please check your credentials."
-        );
+      if (err instanceof Error) {
+        console.error('Login error:', {
+          message: err.message,
+          stack: err.stack
+        });
+        setError(err.message || "Login failed. Please try again.");
       } else {
-        setError("Login failed. Please try again.");
+        console.error('Unknown login error:', err);
+        setError("An unexpected error occurred during login.");
       }
     }
   };

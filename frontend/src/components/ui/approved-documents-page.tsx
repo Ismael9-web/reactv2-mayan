@@ -2,9 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import api from "../../../services/api";
-import budgetLogo from "@/assets/budget.svg";
+import api, { logout } from "../../../services/api";
+import budgetLogo from "@/assets/budget.jpeg";
 import Cookies from "js-cookie";
+
 
 // Get username from cookie (if available)
 function getUsername() {
@@ -97,8 +98,16 @@ export default function ApprovedDocumentsPage() {
     setLoading(true);
     api.get("/approved_documents_metadata")
       .then((res) => {
-        setLabels(res.data.columns);
-        setVisibleColumns(res.data.columns); // all columns visible by default
+        if (!res.data || !res.data.columns || !res.data.rows) {
+          console.error('Invalid response format:', res.data);
+          throw new Error('Invalid response format from server');
+        }
+        // Filter out internal fields from visible columns
+        const visibleLabels = res.data.columns.filter((col: string) => 
+          col !== 'canEdit' && col !== 'Statut' && col !== 'id'
+        );
+        setLabels(visibleLabels);
+        setVisibleColumns(visibleLabels); // Only show visible columns by default
         setData(res.data.rows);
         setLoading(false);
       })
@@ -117,12 +126,19 @@ export default function ApprovedDocumentsPage() {
 
 
   // Logout handler
-  const handleLogout = () => {
-    Cookies.remove("authToken", { path: "/" });
-    Cookies.remove("sessionid", { path: "/" });
-    Cookies.remove("csrftoken", { path: "/" });
-    Cookies.remove("username", { path: "/" });
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Failed to logout:', error);
+    } finally {
+      // Always clear cookies on client side for robustness
+      Cookies.remove("authToken", { path: "/" });
+      Cookies.remove("sessionid", { path: "/" });
+      Cookies.remove("csrftoken", { path: "/" });
+      Cookies.remove("username", { path: "/" });
+      navigate("/login");
+    }
   };
 
   // Filtering
@@ -299,19 +315,11 @@ export default function ApprovedDocumentsPage() {
                         }
                       }
                       const expired = isDateExpired(dateFin);
-                      // Set status to 'expired' if date is expired, otherwise use backend status
-                      const statut = expired ? 'expired' : (row['Statut'] || 'pending');
-                      // Logic for edit/pay button visibility:
-                      // - If expired: no button (canEdit = false)
-                      // - If status is 'payé': show edit button (canEdit = true)
-                      // - If status is 'pending': show pay button (canEdit = false)
-                      const canEdit = expired ? false : 
-                                    statut === 'payé' ? true :
-                                    statut === 'pending' ? false : 
-                                    row['canEdit'] === 'true';
-                      // Zebra striping using only Tailwind
+                      const statut = row['Statut'] || 'pending';
                       return (
-                        <tr key={i} className={`text-xs hover:bg-blue-50 transition-colors leading-tight ${selectedRows.has(i) ? 'bg-blue-100' : (i % 2 === 0 ? 'bg-gray-50' : 'bg-white')} ${expired ? 'opacity-60 pointer-events-none' : ''}`}> 
+                        <tr key={i} className={`text-xs hover:bg-blue-50 transition-colors leading-tight ${
+                                selectedRows.has(i) ? 'bg-blue-100' : (i % 2 === 0 ? 'bg-gray-50' : 'bg-white')
+                              } ${expired ? 'opacity-60 pointer-events-none' : ''}`}> 
                           <td className="px-2 py-0.5 text-center align-middle">
                             <input
                               type="checkbox"
@@ -339,11 +347,16 @@ export default function ApprovedDocumentsPage() {
                           })}
                           {/* Status column */}
                           <td className="px-2 py-0.5 text-center align-middle font-semibold">
-                            {(statut === 'paid' || statut === 'payé') ? <span className="text-green-600 text-xs">payé</span> : <span className="text-yellow-600 text-xs">en attente</span>}
+                            {(statut === 'paid' || statut === 'payé') ? 
+                              <span className="text-green-600 text-xs">payé</span> : 
+                              expired ? 
+                              <span className="text-red-600 text-xs">expiré</span> :
+                              <span className="text-yellow-600 text-xs">en attente</span>
+                            }
                           </td>
                           {/* Actions column */}
                           <td className="px-2 py-0.5 text-center align-middle">
-                            {canEdit ? (
+                            {((statut === 'payé' || statut === 'paid') && !expired) ? (
                               <button
                                 className="px-2 py-0.5 rounded bg-blue-600 text-white text-xs font-semibold w-16 hover:bg-blue-700 transition-colors"
                                 title="Modifier le paiement"
@@ -353,15 +366,12 @@ export default function ApprovedDocumentsPage() {
                                   setPendingPaymentRowIdx(i);
                                 }}
                               >
-                                Edit
+                                Modifier
                               </button>
-                            ) : (
+                            ) : (!expired && (
                               <button
-                                className={`px-2 py-0.5 rounded text-white text-xs font-semibold w-16 transition-colors ${expired ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}
-                                disabled={expired}
-                                title={expired ? 'Date expirée' : 'Payer'}
+                                className="px-2 py-0.5 rounded bg-green-600 text-white text-xs font-semibold w-16 hover:bg-green-700 transition-colors"
                                 onClick={() => {
-                                  if (expired) return;
                                   setPrefillData(row);
                                   setShowPaymentSheet(true);
                                   setPendingPaymentRowIdx(i);
@@ -369,7 +379,7 @@ export default function ApprovedDocumentsPage() {
                               >
                                 Payer
                               </button>
-                            )}
+                            ))}
                           </td>
                         </tr>
                       );
