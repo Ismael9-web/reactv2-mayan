@@ -61,6 +61,37 @@ function SheetContent({
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: "top" | "right" | "bottom" | "left"
 }) {
+  // Accessibility: ensure a DialogTitle and Description are present
+  // If not present in children, inject visually hidden ones
+  // Use Radix's VisuallyHidden (or fallback) for hidden elements
+  // We'll use a simple span with sr-only if VisuallyHidden is not available
+
+  // Type guard for props
+  function hasDataSlot(props: unknown, slot: string): boolean {
+    return (
+      typeof props === 'object' &&
+      props !== null &&
+      'data-slot' in props &&
+      (props as { 'data-slot'?: string })['data-slot'] === slot
+    );
+  }
+
+  const hasTitle = React.Children.toArray(children).some(
+    child =>
+      React.isValidElement(child) &&
+      (child.type === SheetPrimitive.Title || hasDataSlot(child.props, 'sheet-title'))
+  );
+  const hasDescription = React.Children.toArray(children).some(
+    child =>
+      React.isValidElement(child) &&
+      (child.type === SheetPrimitive.Description || hasDataSlot(child.props, 'sheet-description'))
+  );
+
+  // Fallback visually hidden component using sr-only class
+  const VisuallyHidden = ({ children }: { children: React.ReactNode }) => (
+    <span className="sr-only">{children}</span>
+  );
+
   return (
     <SheetPortal>
       <SheetOverlay />
@@ -80,6 +111,9 @@ function SheetContent({
         )}
         {...props}
       >
+        {/* Inject visually hidden title/description if missing for a11y */}
+        {!hasTitle && <SheetPrimitive.Title asChild><VisuallyHidden>Sheet</VisuallyHidden></SheetPrimitive.Title>}
+        {!hasDescription && <SheetPrimitive.Description asChild><VisuallyHidden>Sheet dialog</VisuallyHidden></SheetPrimitive.Description>}
         {children}
         <SheetClose asChild>
           <button
@@ -92,7 +126,7 @@ function SheetContent({
         </SheetClose>
       </SheetPrimitive.Content>
     </SheetPortal>
-  )
+  );
 }
 
 function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
