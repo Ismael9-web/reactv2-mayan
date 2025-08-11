@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 import type { AxiosResponse, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import Cookies from 'js-cookie';
@@ -38,6 +37,21 @@ export const login = async (username: string, password: string) => {
     throw new Error('No token received');
   } catch (error) {
     console.error('Login error:', error);
+    throw error;
+  }
+};
+
+// Update a single metadata entry for a document
+export const updateDocumentMetadata = async (
+  documentId: string,
+  metadataId: string,
+  value: string
+) => {
+  try {
+    const response = await api.put(`/mayan/documents/${documentId}/metadata/${metadataId}`, { value });
+    return response.data;
+  } catch (error) {
+    console.error('Update document metadata error:', error);
     throw error;
   }
 };

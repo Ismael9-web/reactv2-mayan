@@ -2,9 +2,26 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import api, { logout } from "../../../services/api";
+import api, { logout, updateDocumentMetadata } from "../../../services/api";
 import budgetLogo from "@/assets/budget.jpeg";
 import Cookies from "js-cookie";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
+import { exportTableToPDF } from "../ui/export-table-to-pdf";
+import PaymentVoucherForm from "../forms/PaymentVoucherForm";
+import {
+  Sheet,
+  SheetContent,
+} from "@/components/ui/sheet";
+  // Fetch metadata for a document
+  const fetchDocumentMetadata = async (docId: string) => {
+    const res = await api.get(`/mayan/documents/${docId}/metadata`);
+    return res.data?.data?.results || [];
+  };
+
 
 
 // Get username from cookie (if available)
@@ -49,12 +66,7 @@ function formatMoneyFr(val?: string) {
     })
     .replace(/\u00A0/g, ' ');
 }
-import { exportTableToPDF } from "../ui/export-table-to-pdf";
-import PaymentVoucherForm from "../forms/PaymentVoucherForm";
-import {
-  Sheet,
-  SheetContent,
-} from "@/components/ui/sheet";
+
 // Helper to check if a date string (in any supported format) is before today
 function isDateExpired(dateStr?: string | null) {
   if (!dateStr) return false;
@@ -82,7 +94,13 @@ interface RowData {
 export default function ApprovedDocumentsPage() {
   const navigate = useNavigate();
   const [showPaymentSheet, setShowPaymentSheet] = useState(false);
-  // Remove local paidRows state, use backend Statut/canEdit instead
+  // Edit drawer and metadata state (moved here from top-level)
+  const [showEditDrawer, setShowEditDrawer] = useState(false);
+  const [editMetadata, setEditMetadata] = useState<any>(null);
+  const [editRow, setEditRow] = useState<any>(null);
+  // Store edited values for all editable fields
+  const [editValues, setEditValues] = useState<Record<string, string>>({});
+  const [editLoading, setEditLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [prefillData, setPrefillData] = useState<Record<string, string> | null>(null);
   const [data, setData] = useState<RowData[]>([]);
@@ -198,9 +216,20 @@ export default function ApprovedDocumentsPage() {
   };
 
   // Handler for successful voucher submission
-  const handleVoucherSuccess = () => {
+  const handleVoucherSuccess = async () => {
     setShowPaymentSheet(false);
     setShowModal(true);
+    setPendingPaymentRowIdx(undefined);
+    // Refresh table data after successful payment
+    setLoading(true);
+    try {
+      const res = await api.get("/approved_documents_metadata");
+      setData(res.data.rows);
+    } catch (err) {
+      // Optionally handle error
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -347,23 +376,59 @@ export default function ApprovedDocumentsPage() {
                           })}
                           {/* Status column */}
                           <td className="px-2 py-0.5 text-center align-middle font-semibold">
-                            {(statut === 'paid' || statut === 'payé') ? 
-                              <span className="text-green-600 text-xs">payé</span> : 
-                              expired ? 
-                              <span className="text-red-600 text-xs">expiré</span> :
+                            {(statut === 'paid' || statut === 'payé') ? (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span
+                                    className="text-green-600 text-xs underline cursor-pointer"
+                                    onMouseEnter={async () => {
+                                      // Fetch and cache metadata for tooltip
+                                      if (!row._metadataTooltip) {
+                                        const meta = await fetchDocumentMetadata(row.paymentDocId || row.id);
+                                        row._metadataTooltip = meta;
+                                        setData([...data]);
+                                      }
+                                    }}
+                                  >
+                                    payé
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                  <div className="text-left max-w-xs">
+                                    {Array.isArray(row._metadataTooltip) ? (
+                                      <ul>
+                                        {row._metadataTooltip.map((meta: any) => (
+                                          <li key={meta.id}>
+                                            <span className="font-semibold">{meta.metadata_type?.label || meta.metadata_type?.name}:</span> {meta.value}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    ) : row._metadataTooltip ? (
+                                      <span>{row._metadataTooltip}</span>
+                                    ) : (
+                                      <span>Chargement...</span>
+                                    )}
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            ) : expired ? (
+                              <span className="text-red-600 text-xs">expiré</span>
+                            ) : (
                               <span className="text-yellow-600 text-xs">en attente</span>
-                            }
+                            )}
                           </td>
                           {/* Actions column */}
                           <td className="px-2 py-0.5 text-center align-middle">
                             {((statut === 'payé' || statut === 'paid') && !expired) ? (
                               <button
                                 className="px-2 py-0.5 rounded bg-blue-600 text-white text-xs font-semibold w-16 hover:bg-blue-700 transition-colors"
-                                title="Modifier le paiement"
-                                onClick={() => {
-                                  setPrefillData(row);
-                                  setShowPaymentSheet(true);
-                                  setPendingPaymentRowIdx(i);
+                                title="Modifier les métadonnées"
+                                onClick={async () => {
+                                  // Fetch metadata for edit
+                                  const meta = await fetchDocumentMetadata(row.paymentDocId || row.id);
+                                  setEditMetadata(meta);
+                                  setEditRow(row);
+                                  setShowEditDrawer(true);
                                 }}
                               >
                                 Modifier
@@ -380,6 +445,78 @@ export default function ApprovedDocumentsPage() {
                                 Payer
                               </button>
                             ))}
+    {/* Drawer for editing metadata */}
+    <Sheet open={showEditDrawer} onOpenChange={setShowEditDrawer}>
+      <SheetContent side="right" className="bg-white/80 backdrop-blur-md shadow-2xl">
+        <div className="p-2">
+          <h2 className="text-lg font-semibold mb-4">Modifier les métadonnées</h2>
+          {editMetadata && editRow ? (
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setEditLoading(true);
+                try {
+                  const docId = editRow.paymentDocId || editRow.id;
+                  // Find all editable fields that changed
+                  const updates = editMetadata.filter((meta: any) => meta.editable && editValues[meta.id] !== undefined && editValues[meta.id] !== meta.value);
+                  for (const meta of updates) {
+                    await updateDocumentMetadata(docId, meta.id, editValues[meta.id]);
+                  }
+                  setShowEditDrawer(false);
+                  setEditMetadata(null);
+                  setEditRow(null);
+                  setEditValues({});
+                  // Refresh data
+                  setLoading(true);
+                  const res = await api.get("/approved_documents_metadata");
+                  setData(res.data.rows);
+                  setLoading(false);
+                } catch (err) {
+                  alert("Erreur lors de la mise à jour des métadonnées");
+                } finally {
+                  setEditLoading(false);
+                }
+              }}
+              className="space-y-4"
+            >
+              {editMetadata
+                .filter((meta: any) => {
+                  // Only allow editing for Montant, Date, Description, Payeur, Mode
+                  const allowed = [
+                    'Montant', 'Date', 'Description', 'Payeur', 'Mode',
+                    'montant', 'date', 'description', 'payeur', 'mode',
+                    'MONTANT', 'DATE', 'DESCRIPTION', 'PAYEUR', 'MODE',
+                  ];
+                  const label = meta.metadata_type?.label || meta.metadata_type?.name || '';
+                  return allowed.includes(label);
+                })
+                .map((meta: any) => (
+                  <div key={meta.id} className="mb-3">
+                    <label className="block text-xs font-semibold mb-1">{meta.metadata_type?.label || meta.metadata_type?.name}</label>
+                    <input
+                      className={`w-full border rounded px-2 py-1 text-xs focus:ring-2 focus:ring-blue-400 ${meta.editable ? '' : 'bg-gray-100 text-gray-500'}`}
+                      value={meta.editable ? (editValues[meta.id] ?? meta.value) : meta.value}
+                      disabled={!meta.editable}
+                      onChange={meta.editable ? (e) => setEditValues((vals) => ({ ...vals, [meta.id]: e.target.value })) : undefined}
+                      placeholder={meta.metadata_type?.label || meta.metadata_type?.name}
+                      title={meta.metadata_type?.label || meta.metadata_type?.name}
+                    />
+                  </div>
+                ))}
+              <button
+                type="submit"
+                className="w-full bg-blue-600 text-white py-2 rounded mt-2 disabled:opacity-50 hover:bg-blue-700 transition-colors"
+                disabled={editLoading}
+              >
+                {editLoading ? "Mise à jour..." : "Enregistrer"}
+              </button>
+            </form>
+          ) : (
+            <span>Chargement...</span>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
                           </td>
                         </tr>
                       );
@@ -449,4 +586,4 @@ export default function ApprovedDocumentsPage() {
       Ministère du Budget &copy; 2025
     </footer>
   </div>
-);}
+)};

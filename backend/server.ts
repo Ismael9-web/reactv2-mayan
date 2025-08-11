@@ -1,3 +1,5 @@
+
+
 import express from 'express';
 import bodyParser from 'body-parser';
 import cors from 'cors';
@@ -156,38 +158,6 @@ app.post('/api/mayan/documents', upload.single('file'), async (req, res) => {
   }
 });
 
-// Add metadata to a document (using axios)
-// Add document to cabinet (cabinet_id=4)
-app.post('/api/mayan/documents/:id/add-to-cabinet', async (req, res) => {
-  try {
-    const token = await getAuthToken();
-    const { id } = req.params;
-    const sessionid = req.cookies.sessionid;
-    const csrftoken = req.cookies.csrftoken;
-    const cabinetId = 4; // Hardcoded as per user request
-    const result = await axios.post(
-      `http://localhost/api/v4/cabinets/${cabinetId}/documents/`,
-      { document: id },
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'X-CSRFTOKEN': csrftoken,
-          'Cookie': `sessionid=${sessionid}; csrftoken=${csrftoken}`,
-          'Referer': 'http://localhost:5173',
-          'Accept': 'application/json',
-        },
-        maxContentLength: Infinity,
-        maxBodyLength: Infinity,
-        withCredentials: true,
-      }
-    );
-    res.json({ success: true, data: result.data });
-  } catch (error) {
-    console.error('Mayan add document to cabinet error:', error);
-    res.status(500).json({ error: 'Failed to add document to cabinet' });
-  }
-});
 
 app.post('/api/mayan/documents/:id/metadata', async (req, res) => {
   try {
@@ -282,6 +252,31 @@ app.delete('/api/mayan/documents/:id/metadata/:metadata_id', async (req, res) =>
   } catch (error) {
     console.error('Mayan delete metadata error:', error);
     res.status(500).json({ error: 'Failed to delete metadata' });
+  }
+});
+
+// Update a metadata entry for a document (using axios)
+app.put('/api/mayan/documents/:id/metadata/:metadata_id', async (req, res) => {
+  try {
+    const token = await getAuthToken();
+    const { id, metadata_id } = req.params;
+    const { value } = req.body;
+    // Optionally allow updating other fields if needed
+    await axios.put(
+      `http://localhost/api/v4/documents/${id}/metadata/${metadata_id}/`,
+      { value },
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Referer': 'http://localhost:5173',
+        },
+      }
+    );
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Mayan update metadata error:', error);
+    res.status(500).json({ error: 'Failed to update metadata' });
   }
 });
 
