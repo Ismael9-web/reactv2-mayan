@@ -101,13 +101,31 @@ const upload = multer({
   },
 });
 
-// --- SESSION CHECK ENDPOINT FOR PROTECTED ROUTES ---
-// Place this after all middleware and before protected routes
-app.get('/api/session-check', (req, res) => {
-  if (req.session && req.session.user) {
-    res.json({ loggedIn: true, user: req.session.user });
-  } else {
-    res.status(401).json({ loggedIn: false });
+
+// --- CHECK AUTH ENDPOINT FOR PROTECTED ROUTES ---
+// Checks if tresor_csrftoken and tresor_auth cookies exist and are valid
+app.get('/api/check-auth', async (req, res) => {
+  const tresorCsrftoken = req.cookies.tresor_csrftoken;
+  const tresorAuth = req.cookies.tresor_auth;
+  if (!tresorCsrftoken || !tresorAuth) {
+    return res.status(401).json({ loggedIn: false });
+  }
+  // Optionally, try a Mayan endpoint to verify credentials (lightweight, e.g. /api/v4/users/current/)
+  try {
+    const mayanRes = await axios.get('http://localhost/api/v4/users/current/', {
+      headers: {
+        'Authorization': `Basic ${tresorAuth}`,
+        'Cookie': `csrftoken=${tresorCsrftoken}`,
+        'Referer': 'http://localhost:5173',
+      },
+      withCredentials: true
+    });
+    if (mayanRes.status === 200) {
+      return res.json({ loggedIn: true });
+    }
+    return res.status(401).json({ loggedIn: false });
+  } catch (err) {
+    return res.status(401).json({ loggedIn: false });
   }
 });
 
@@ -143,10 +161,10 @@ app.post('/api/mayan/documents', upload.single('file'), async (req, res) => {
     }
 
     // Get cookies and CSRF token from request
-    const sessionid = req.cookies.sessionid;
-    const csrftoken = req.cookies.csrftoken;
-    console.log('sessionid:', sessionid);
-    console.log('csrftoken:', csrftoken);
+    const tresor_csrftoken = req.cookies.tresor_csrftoken;
+    const tresor_auth = req.cookies.tresor_auth;
+    console.log('tresor_csrftoken:', tresor_csrftoken);
+    console.log('tresor_auth:', tresor_auth);
 
     // Prepare form-data for Mayan
     const form = new (require('form-data'))();
@@ -167,8 +185,9 @@ app.post('/api/mayan/documents', upload.single('file'), async (req, res) => {
       headers: {
         ...form.getHeaders(),
         'accept': 'application/json',
-        'X-CSRFTOKEN': csrftoken,
-        'Cookie': `sessionid=${sessionid}; csrftoken=${csrftoken}`,
+        'Authorization': `Basic ${tresor_auth}`,
+        'X-CSRFTOKEN': tresor_csrftoken,
+        'Cookie': `csrftoken=${tresor_csrftoken}; authToken=${tresor_auth}`,
         'Referer': 'http://localhost:5173',
       },
       maxContentLength: Infinity,
@@ -205,8 +224,8 @@ app.post('/api/mayan/documents/:id/metadata', async (req, res) => {
     const token = await getAuthToken();
     const { id } = req.params;
     const { metadata_type_id, metadata_type, value, statut, description, documentId } = req.body;
-    const sessionid = req.cookies.sessionid;
-    const csrftoken = req.cookies.csrftoken;
+    const tresor_csrftoken = req.cookies.tresor_csrftoken;
+    const tresor_auth = req.cookies.tresor_auth;
     // Build metadata payloads
     const payloads: any[] = [];
     if (metadata_type_id && metadata_type && value !== undefined) {
@@ -228,10 +247,10 @@ app.post('/api/mayan/documents/:id/metadata', async (req, res) => {
         payload,
         {
           headers: {
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Basic ${token}`,
             'Content-Type': 'application/json',
-            'X-CSRFTOKEN': csrftoken,
-            'Cookie': `sessionid=${sessionid}; csrftoken=${csrftoken}`,
+            'X-CSRFTOKEN': tresor_csrftoken,
+            'Cookie': `csrftoken=${tresor_csrftoken}; authToken=${tresor_auth}`,
             'Referer': 'http://localhost:5173',
             'Accept': 'application/json',
           },
@@ -253,16 +272,16 @@ app.post('/api/mayan/documents/:id/metadata', async (req, res) => {
 app.get('/api/mayan/documents/:id/metadata', async (req, res) => {
   try {
     const token = await getAuthToken();
-    const sessionid = req.cookies.sessionid;
-    const csrftoken = req.cookies.csrftoken;
+    const tresor_auth = req.cookies.tresor_auth;
+    const tresor_csrftoken = req.cookies.tresor_csrftoken;
     const { id } = req.params;
     const result = await axios.get(
       `http://localhost/api/v4/documents/${id}/metadata/`,
       {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Cookie': `sessionid=${sessionid}; csrftoken=${csrftoken}`,
-          'X-CSRFTOKEN': csrftoken,
+          'Authorization': `Basic ${tresor_auth}`,
+          'Cookie': `csrftoken=${tresor_csrftoken}; authToken=${tresor_auth}`,
+          'X-CSRFTOKEN': tresor_csrftoken,
           'Referer': 'http://localhost:5173',
         },
         withCredentials: true,
@@ -275,26 +294,6 @@ app.get('/api/mayan/documents/:id/metadata', async (req, res) => {
   }
 });
 
-// Delete a metadata entry from a document (using axios)
-app.delete('/api/mayan/documents/:id/metadata/:metadata_id', async (req, res) => {
-  try {
-    const token = await getAuthToken();
-    const { id, metadata_id } = req.params;
-    await axios.delete(
-      `http://localhost/api/v4/documents/${id}/metadata/${metadata_id}/`,
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Referer': 'http://localhost:5173',
-        },
-      }
-    );
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Mayan delete metadata error:', error);
-    res.status(500).json({ error: 'Failed to delete metadata' });
-  }
-});
 
 // Update a metadata entry for a document (using axios)
 app.put('/api/mayan/documents/:id/metadata/:metadata_id', async (req, res) => {
@@ -302,14 +301,18 @@ app.put('/api/mayan/documents/:id/metadata/:metadata_id', async (req, res) => {
     const token = await getAuthToken();
     const { id, metadata_id } = req.params;
     const { value } = req.body;
+    const tresor_csrftoken = req.cookies.tresor_csrftoken;
+    const tresor_auth = req.cookies.tresor_auth;
     // Optionally allow updating other fields if needed
     await axios.put(
       `http://localhost/api/v4/documents/${id}/metadata/${metadata_id}/`,
       { value },
       {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Basic ${tresor_auth}`,
           'Content-Type': 'application/json',
+          'X-CSRFTOKEN': tresor_csrftoken,
+          'Cookie': `csrftoken=${tresor_csrftoken}; authToken=${tresor_auth}`,
           'Referer': 'http://localhost:5173',
         },
       }
@@ -327,7 +330,14 @@ app.get('/api/approved_documents_metadata', async (req, res) => {
         const sessionid = req.cookies.sessionid;
         const csrftoken = req.cookies.csrftoken;
         const authToken = req.cookies.authToken;
-        if (!sessionid || !csrftoken || !authToken) {
+        const tresor_csrftoken = req.cookies.tresor_csrftoken;
+        const tresor_auth = req.cookies.tresor_auth;
+
+        console.log('--- /api/approved_documents_metadata called ---');
+        console.log('Request headers:', req.headers);
+        console.log('Request cookies:', req.cookies);
+
+        if (!tresor_csrftoken || !tresor_auth ) {
             return res.status(401).json({ error: 'Missing authentication cookies' });
         }
         const token = await getAuthToken();
@@ -336,10 +346,10 @@ app.get('/api/approved_documents_metadata', async (req, res) => {
         }
         // Helper function to create headers for API requests
         const createHeaders = () => ({
-            'Authorization': `Bearer ${token}`,
-            'Cookie': `sessionid=${sessionid}; csrftoken=${csrftoken}`,
-            'X-CSRFTOKEN': csrftoken,
-            'Referer': 'http://localhost:5173',
+          'Authorization': `Basic ${tresor_auth}`,
+          'Cookie': `csrftoken=${tresor_csrftoken}`,
+          'X-CSRFTOKEN': tresor_csrftoken,
+          'Referer': 'http://localhost:5173',
         });
 
         // Fetch all person documents (type 2)
@@ -528,77 +538,66 @@ app.get('/api/document_types/3/documents', async (req, res) => {
 });
 
 
-app.post('/api/logout', async (req, res) => {
-    try {
-        // Clear all cookies
-        res.clearCookie('authToken', { path: '/' });
-        res.clearCookie('sessionid', { path: '/' });
-        res.clearCookie('csrftoken', { path: '/' });
-        res.clearCookie('username', { path: '/' });
-        res.json({ success: true, message: 'Logged out successfully' });
-    } catch (error) {
-        console.error('Logout error:', error);
-        res.status(500).json({ error: 'Failed to logout' });
-    }
+
+// --- NEW LOGOUT FLOW: Only clear tresor_csrftoken and tresor_auth ---
+app.post('/api/logout', (req, res) => {
+  res.clearCookie('tresor_csrftoken', { path: '/', httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production' });
+  res.clearCookie('tresor_auth', { path: '/', httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production' });
+  res.json({ message: 'Logged out' });
 });
 
+
+// --- NEW LOGIN FLOW: Integrate with Mayan EDMS ---
 app.post('/api/login', async (req, res) => {
-    const { username, password } = req.body;
-    try {
-        // Make login request to Mayan EDMS
-        const tokenResponse = await axios.post('http://localhost/api/v4/auth/token/obtain/', {
-            username,
-            password,
-        }, {
-            headers: { 'Content-Type': 'application/json' },
-            withCredentials: true
-        });
-        const token = tokenResponse.data.token;
-
-        // Extract sessionid and csrftoken from set-cookie headers if present
-        let sessionid: string | null = null;
-        let csrftoken: string | null = null;
-        const setCookie = tokenResponse.headers['set-cookie'];
-        if (setCookie && Array.isArray(setCookie)) {
-            setCookie.forEach(cookieStr => {
-                if (cookieStr.startsWith('sessionid=')) {
-                    sessionid = cookieStr.split(';')[0].split('=')[1];
-                }
-                if (cookieStr.startsWith('csrftoken=')) {
-                    csrftoken = cookieStr.split(';')[0].split('=')[1];
-                }
-            });
+  const { username, password } = req.body;
+  try {
+    // Forward credentials to Mayan
+    const tokenResponse = await axios.post('http://localhost/api/v4/auth/token/obtain/', {
+      username,
+      password,
+    }, {
+      headers: { 'Content-Type': 'application/json' },
+      withCredentials: true
+    });
+    // Extract csrftoken from set-cookie
+    let csrftoken: string | null = null;
+    const setCookie = tokenResponse.headers['set-cookie'];
+    if (setCookie && Array.isArray(setCookie)) {
+      setCookie.forEach(cookieStr => {
+        if (cookieStr.startsWith('csrftoken=')) {
+          csrftoken = cookieStr.split(';')[0].split('=')[1];
         }
-
-        // Fallback: try to get from response data if available
-        if (!sessionid && tokenResponse.data.sessionid) sessionid = tokenResponse.data.sessionid;
-        if (!csrftoken && tokenResponse.data.csrftoken) csrftoken = tokenResponse.data.csrftoken;
-
-        // Set cookies
-        res.cookie('authToken', token, { httpOnly: false, secure: false, sameSite: 'lax', maxAge: 24 * 60 * 60 * 1000, path: '/' });
-        if (sessionid) {
-            res.cookie('sessionid', sessionid, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 24 * 60 * 60 * 1000, path: '/' });
-        }
-        if (csrftoken) {
-            res.cookie('csrftoken', csrftoken, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 24 * 60 * 60 * 1000, path: '/' });
-        }
-
-        // Set user in session for session-based auth
-        if (req.session) {
-            req.session.user = { username, token };
-        }
-
-        res.json({ token, sessionid, csrftoken });
-    } catch (error) {
-        let msg = 'Unknown error';
-        if (typeof error === 'object' && error !== null && 'message' in error) {
-            msg = (error as any).message;
-        } else if (typeof error === 'string') {
-            msg = error;
-        }
-        console.error('Login error:', msg);
-        res.status(401).json({ error: 'Invalid credentials' });
+      });
     }
+    if (!csrftoken && tokenResponse.data.csrftoken) csrftoken = tokenResponse.data.csrftoken;
+    // If Mayan did not provide a CSRF token, generate a secure random one
+    if (!csrftoken) {
+      // Generate a random 32-character hex string
+      csrftoken = [...Array(32)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+    }
+    // Generate Basic auth string
+    const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');
+    // Set secure, httpOnly cookies (custom names)
+    const cookieOptions = {
+      httpOnly: true,
+      sameSite: 'lax' as const,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 24 * 60 * 60 * 1000,
+      path: '/',
+    };
+    res.cookie('tresor_csrftoken', csrftoken, cookieOptions);
+    res.cookie('tresor_auth', basicAuth, cookieOptions);
+    return res.json({ message: 'Login successful' });
+  } catch (error) {
+    let msg = 'Unknown error';
+    if (typeof error === 'object' && error !== null && 'message' in error && typeof (error as any).message === 'string') {
+      msg = (error as any).message;
+    } else if (typeof error === 'string') {
+      msg = error;
+    }
+    console.error('Login error:', msg);
+    return res.status(401).json({ message: 'Invalid credentials' });
+  }
 });
 
 // Configure the server

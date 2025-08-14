@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import api, { logout, updateDocumentMetadata } from "../../../services/api";
+import api, { logout } from "../../../services/api";
 import budgetLogo from "@/assets/budget.jpeg";
 import Cookies from "js-cookie";
 import {
@@ -96,8 +96,8 @@ export default function ApprovedDocumentsPage() {
   const [showPaymentSheet, setShowPaymentSheet] = useState(false);
   // Edit drawer and metadata state (moved here from top-level)
   const [showEditDrawer, setShowEditDrawer] = useState(false);
-  const [editMetadata, setEditMetadata] = useState<any>(null);
-  const [editRow, setEditRow] = useState<any>(null);
+  const [editMetadata, setEditMetadata] = useState<Array<{ id: string; value: string; editable: boolean; metadata_type?: { label?: string; name?: string } }> | null>(null);
+  const [editRow, setEditRow] = useState<RowData | null>(null);
   // Store edited values for all editable fields
   const [editValues, setEditValues] = useState<Record<string, string>>({});
   const [editLoading, setEditLoading] = useState(false);
@@ -110,7 +110,7 @@ export default function ApprovedDocumentsPage() {
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [visibleColumns, setVisibleColumns] = useState<string[]>([]);
   // Refactored: use React state for pending payment row index
-  const [pendingPaymentRowIdx, setPendingPaymentRowIdx] = useState<number | undefined>(undefined);
+  // Removed unused pendingPaymentRowIdx to fix eslint no-unused-vars
 
   useEffect(() => {
     setLoading(true);
@@ -133,9 +133,8 @@ export default function ApprovedDocumentsPage() {
         setLoading(false);
         if (err?.response?.status === 401) {
           // Clear cookies and redirect to login
-          Cookies.remove("authToken", { path: "/" });
-          Cookies.remove("sessionid", { path: "/" });
-          Cookies.remove("csrftoken", { path: "/" });
+          Cookies.remove("tresor_csrftoken", { path: "/" });
+          Cookies.remove("tresor_auth", { path: "/" });
           Cookies.remove("username", { path: "/" });
           navigate("/login");
         }
@@ -151,9 +150,8 @@ export default function ApprovedDocumentsPage() {
       console.error('Failed to logout:', error);
     } finally {
       // Always clear cookies on client side for robustness
-      Cookies.remove("authToken", { path: "/" });
-      Cookies.remove("sessionid", { path: "/" });
-      Cookies.remove("csrftoken", { path: "/" });
+      Cookies.remove("tresor_csrftoken", { path: "/" });
+      Cookies.remove("tresor_auth", { path: "/" });
       Cookies.remove("username", { path: "/" });
       navigate("/login");
     }
@@ -219,18 +217,15 @@ export default function ApprovedDocumentsPage() {
   const handleVoucherSuccess = async () => {
     setShowPaymentSheet(false);
     setShowModal(true);
-    setPendingPaymentRowIdx(undefined);
     // Refresh table data after successful payment
     setLoading(true);
     try {
       const res = await api.get("/approved_documents_metadata");
       setData(res.data.rows);
-    } catch (err) {
-      // Optionally handle error
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
   <div className="min-h-screen w-full flex flex-col justify-between bg-gray-50">
@@ -397,7 +392,7 @@ export default function ApprovedDocumentsPage() {
                                   <div className="text-left max-w-xs">
                                     {Array.isArray(row._metadataTooltip) ? (
                                       <ul>
-                                        {row._metadataTooltip.map((meta: any) => (
+                                        {row._metadataTooltip.map((meta: { id: string; value: string; metadata_type?: { label?: string; name?: string } }) => (
                                           <li key={meta.id}>
                                             <span className="font-semibold">{meta.metadata_type?.label || meta.metadata_type?.name}:</span> {meta.value}
                                           </li>
@@ -439,7 +434,6 @@ export default function ApprovedDocumentsPage() {
                                 onClick={() => {
                                   setPrefillData(row);
                                   setShowPaymentSheet(true);
-                                  setPendingPaymentRowIdx(i);
                                 }}
                               >
                                 Payer
@@ -456,22 +450,24 @@ export default function ApprovedDocumentsPage() {
                 e.preventDefault();
                 setEditLoading(true);
                 try {
-                  const docId = editRow.paymentDocId || editRow.id;
-                  // Find all editable fields that changed
-                  const updates = editMetadata.filter((meta: any) => meta.editable && editValues[meta.id] !== undefined && editValues[meta.id] !== meta.value);
-                  for (const meta of updates) {
-                    await updateDocumentMetadata(docId, meta.id, editValues[meta.id]);
+                  if (editMetadata && editRow) {
+                    const docId = editRow.paymentDocId || editRow.id;
+                    // Find all editable fields that changed
+                    const updates = editMetadata.filter((meta) => meta.editable && editValues[meta.id] !== undefined && editValues[meta.id] !== meta.value);
+                    for (const meta of updates) {
+                      await api.put(`/mayan/documents/${docId}/metadata/${meta.id}`, { value: editValues[meta.id] });
+                    }
+                    setShowEditDrawer(false);
+                    setEditMetadata(null);
+                    setEditRow(null);
+                    setEditValues({});
+                    // Refresh data
+                    setLoading(true);
+                    const res = await api.get("/approved_documents_metadata");
+                    setData(res.data.rows);
+                    setLoading(false);
                   }
-                  setShowEditDrawer(false);
-                  setEditMetadata(null);
-                  setEditRow(null);
-                  setEditValues({});
-                  // Refresh data
-                  setLoading(true);
-                  const res = await api.get("/approved_documents_metadata");
-                  setData(res.data.rows);
-                  setLoading(false);
-                } catch (err) {
+                } catch {
                   alert("Erreur lors de la mise à jour des métadonnées");
                 } finally {
                   setEditLoading(false);
@@ -480,7 +476,7 @@ export default function ApprovedDocumentsPage() {
               className="space-y-4"
             >
               {editMetadata
-                .filter((meta: any) => {
+                ?.filter((meta) => {
                   // Only allow editing for Montant, Date, Description, Payeur, Mode
                   const allowed = [
                     'Montant', 'Date', 'Description', 'Payeur', 'Mode',
@@ -490,7 +486,7 @@ export default function ApprovedDocumentsPage() {
                   const label = meta.metadata_type?.label || meta.metadata_type?.name || '';
                   return allowed.includes(label);
                 })
-                .map((meta: any) => (
+                .map((meta) => (
                   <div key={meta.id} className="mb-3">
                     <label className="block text-xs font-semibold mb-1">{meta.metadata_type?.label || meta.metadata_type?.name}</label>
                     <input
@@ -576,7 +572,6 @@ export default function ApprovedDocumentsPage() {
             documentId={prefillData?.id}
             onSuccess={() => {
               handleVoucherSuccess();
-              setPendingPaymentRowIdx(undefined);
             }}
           />
         </div>

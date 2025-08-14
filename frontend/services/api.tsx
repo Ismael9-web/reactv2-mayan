@@ -1,30 +1,19 @@
-// Check session status via backend
 
 import axios from 'axios';
-import type { AxiosResponse, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
-import Cookies from 'js-cookie';
 
-
-
-// Handler for SPA navigation on 401
-let apiUnauthorizedHandler: (() => void) | null = null;
-
-export function setApiUnauthorizedHandler(handler: () => void) {
-  apiUnauthorizedHandler = handler;
-}
-
-const api: AxiosInstance = axios.create({
+// Axios instance for API calls
+const api = axios.create({
   baseURL: 'http://localhost:5000/api',
+  withCredentials: true,
   headers: {
     'Accept': 'application/json',
-    // Do NOT set Content-Type globally; let browser/axios set it for FormData
   },
-  withCredentials: true, // Ensure cookies are sent with requests
 });
 
-export const sessionCheck = async () => {
+// Check authentication status using new stateless endpoint
+export const checkAuth = async () => {
   try {
-    const response = await api.get('/session-check');
+    const response = await api.get('/check-auth');
     return response.data;
   } catch (error: unknown) {
     if (
@@ -40,84 +29,17 @@ export const sessionCheck = async () => {
   }
 };
 
-// Add login function
+// Login using new stateless endpoint
 export const login = async (username: string, password: string) => {
-  try {
-    // Always use the backend endpoint, not the Mayan endpoint directly from frontend
-    const response = await api.post('/login', { username, password });
-    if (response.data.token) {
-      Cookies.set("username", username, { path: "/" });
-      Cookies.set("authToken", response.data.token, { path: "/" });
-      if (response.data.sessionid) {
-        Cookies.set("sessionid", response.data.sessionid, { path: "/" });
-      }
-      if (response.data.csrftoken) {
-        Cookies.set("csrftoken", response.data.csrftoken, { path: "/" });
-      }
-      return response.data;
-    }
-    throw new Error('No token received');
-  } catch (error) {
-    console.error('Login error:', error);
-    throw error;
-  }
+  const response = await api.post('/login', { username, password });
+  return response.data;
 };
 
-// Update a single metadata entry for a document
-export const updateDocumentMetadata = async (
-  documentId: string,
-  metadataId: string,
-  value: string
-) => {
-  try {
-    const response = await api.put(`/mayan/documents/${documentId}/metadata/${metadataId}`, { value });
-    return response.data;
-  } catch (error) {
-    console.error('Update document metadata error:', error);
-    throw error;
-  }
-};
-
-// Add logout function
+// Logout using new stateless endpoint
 export const logout = async () => {
-  try {
-    await api.post('/logout');
-    // Clear cookies on the client side
-    Cookies.remove("authToken", { path: "/" });
-    Cookies.remove("sessionid", { path: "/" });
-    Cookies.remove("csrftoken", { path: "/" });
-    Cookies.remove("username", { path: "/" });
-  } catch (error) {
-    console.error('Logout error:', error);
-    throw error;
-  }
+  await api.post('/logout');
 };
 
-api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const token = Cookies.get('authToken');
-  if (token && config.headers) {
-    config.headers['Authorization'] = `Bearer ${token}`;
-  }
-  // Remove Content-Type for FormData requests
-  if (config.data instanceof FormData) {
-    if (config.headers && config.headers['Content-Type']) {
-      delete config.headers['Content-Type'];
-    }
-  }
-  return config;
-});
-
-api.interceptors.response.use(
-  (response: AxiosResponse) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      Cookies.remove('authToken');
-      if (apiUnauthorizedHandler) {
-        apiUnauthorizedHandler();
-      }
-    }
-    return Promise.reject(error);
-  }
-);
+// ...add other API functions as needed...
 
 export default api;

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import type { ReactElement } from "react";
-import { sessionCheck } from "../../services/api";
+import { checkAuth } from "../../services/api";
 
 export default function ProtectedRoute({ children }: { children: ReactElement }) {
   const [authChecked, setAuthChecked] = useState(false);
@@ -10,7 +10,7 @@ export default function ProtectedRoute({ children }: { children: ReactElement })
 
   useEffect(() => {
     let mounted = true;
-    sessionCheck().then(res => {
+    checkAuth().then(res => {
       if (mounted) {
         setLoggedIn(res.loggedIn);
         setAuthChecked(true);
