@@ -1,6 +1,10 @@
+// Check session status via backend
+
 import axios from 'axios';
 import type { AxiosResponse, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import Cookies from 'js-cookie';
+
+
 
 // Handler for SPA navigation on 401
 let apiUnauthorizedHandler: (() => void) | null = null;
@@ -17,6 +21,24 @@ const api: AxiosInstance = axios.create({
   },
   withCredentials: true, // Ensure cookies are sent with requests
 });
+
+export const sessionCheck = async () => {
+  try {
+    const response = await api.get('/session-check');
+    return response.data;
+  } catch (error: unknown) {
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'response' in error &&
+      typeof (error as { response?: { status?: number } }).response === 'object' &&
+      (error as { response?: { status?: number } }).response?.status === 401
+    ) {
+      return { loggedIn: false };
+    }
+    throw error;
+  }
+};
 
 // Add login function
 export const login = async (username: string, password: string) => {

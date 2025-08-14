@@ -1,12 +1,30 @@
-import { Navigate } from "react-router-dom";
-import Cookies from "js-cookie";
 
+import { useEffect, useState } from "react";
+import { Navigate } from "react-router-dom";
 import type { ReactElement } from "react";
+import { sessionCheck } from "../../services/api";
 
 export default function ProtectedRoute({ children }: { children: ReactElement }) {
-  const token = Cookies.get("authToken") || Cookies.get("token");
-  if (!token) {
-    return <Navigate to="/login" />;
-  }
+  const [authChecked, setAuthChecked] = useState(false);
+  const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    sessionCheck().then(res => {
+      if (mounted) {
+        setLoggedIn(res.loggedIn);
+        setAuthChecked(true);
+      }
+    }).catch(() => {
+      if (mounted) {
+        setLoggedIn(false);
+        setAuthChecked(true);
+      }
+    });
+    return () => { mounted = false; };
+  }, []);
+
+  if (!authChecked) return null; // or a loading spinner
+  if (!loggedIn) return <Navigate to="/login" />;
   return children;
 }

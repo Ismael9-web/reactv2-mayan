@@ -1,16 +1,13 @@
-
-
 import express from 'express';
-import bodyParser from 'body-parser';
-import cors from 'cors';
-import axios from 'axios';
-import cookieParser from 'cookie-parser';
-import { DocumentsApi } from './src/api/mayan-edms/apis/DocumentsApi';
-import * as runtime from './src/api/mayan-edms/runtime';
-import multer from 'multer';
-import { S3Service } from './src/services/s3Service';
-import { Pool } from 'pg';
 import dotenv from 'dotenv';
+import cors from 'cors';
+import bodyParser from 'body-parser';
+import cookieParser from 'cookie-parser';
+import axios from 'axios';
+import multer from 'multer';
+import session from 'express-session';
+import type { Session, SessionData } from 'express-session';
+
 
 const app = express();
 const port = 5000;
@@ -20,6 +17,27 @@ dotenv.config();
 app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
 app.use(bodyParser.json());
 app.use(cookieParser());
+app.use(session({
+  name: 'react_sessionid',
+  secret: process.env.SESSION_SECRET || 'react-app-secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 8 * 60 * 60 * 1000, // 8 hours
+  },
+}));
+
+// Extend express-session types for req.session.user
+// @ts-ignore: If types are missing, this will be fixed after installing @types/express-session
+// TODO: Run `pnpm add -D @types/express-session` or `npm install --save-dev @types/express-session`
+declare module 'express-session' {
+  interface SessionData {
+    user?: { username: string; token: string };
+  }
+}
 
 app.use((req, res, next) => {
     const csrfToken = req.cookies.csrftoken;
@@ -28,6 +46,18 @@ app.use((req, res, next) => {
 
     if (csrfToken && sessionId && authToken) {
         req.headers['X-CSRFTOKEN'] = csrfToken;
+app.use(session({
+  name: 'react_sessionid',
+  secret: process.env.SESSION_SECRET || 'react-app-secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 8 * 60 * 60 * 1000, // 8 hours
+  },
+}));
         req.headers['Cookie'] = `sessionid=${sessionId}`;
         req.headers['Authorization'] = `Bearer ${authToken}`;
     }
@@ -71,6 +101,16 @@ const upload = multer({
   },
 });
 
+// --- SESSION CHECK ENDPOINT FOR PROTECTED ROUTES ---
+// Place this after all middleware and before protected routes
+app.get('/api/session-check', (req, res) => {
+  if (req.session && req.session.user) {
+    res.json({ loggedIn: true, user: req.session.user });
+  } else {
+    res.status(401).json({ loggedIn: false });
+  }
+});
+
 // S3 Routes
 // --- MAYAN EDMS DOCUMENT UPLOAD & METADATA ENDPOINTS (AXIOS-BASED) ---
 // Upload a document to Mayan EDMS (document_type: paiement)
@@ -85,6 +125,7 @@ app.post('/api/mayan/documents', upload.single('file'), async (req, res) => {
       console.log('Content-Type is multipart/form-data');
     } else {
       console.log('Content-Type is NOT multipart/form-data');
+// --- SESSION CHECK ENDPOINT FOR PROTECTED ROUTES ---
     }
     // Log req.body and req.file before multer processes
     console.log('Request body (pre-multer):', req.body);
@@ -439,7 +480,9 @@ app.get('/api/approved_documents_metadata', async (req, res) => {
                 paymentDocId: doc.paymentDocId || null
             };
             allLabels.forEach(label => {
-                row[label] = (doc.metadata as Record<string, string>)[label] || '';
+                row[label] = (doc.metadata && typeof doc.metadata === 'object' && label in doc.metadata)
+                  ? (doc.metadata as Record<string, string>)[label] || ''
+                  : '';
             });
             return row;
         });
@@ -538,6 +581,11 @@ app.post('/api/login', async (req, res) => {
         }
         if (csrftoken) {
             res.cookie('csrftoken', csrftoken, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 24 * 60 * 60 * 1000, path: '/' });
+        }
+
+        // Set user in session for session-based auth
+        if (req.session) {
+            req.session.user = { username, token };
         }
 
         res.json({ token, sessionid, csrftoken });
