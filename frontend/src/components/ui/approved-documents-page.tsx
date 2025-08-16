@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import api, { logout } from "../../../services/api";
-import budgetLogo from "@/assets/budget.jpeg";
+import budgetLogo from "@/assets/favicon.svg";
 import Cookies from "js-cookie";
 import {
   Tooltip,
